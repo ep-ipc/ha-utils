@@ -12,21 +12,23 @@ THEME_FILE = Path(__file__).resolve().parents[1] / "themes" / "ha_utils_font_sca
 def test_theme_file_contains_expected_scale_variants() -> None:
     text = THEME_FILE.read_text(encoding="utf-8")
     names = re.findall(
-        r'^"HA Utils Default Font (\d+)%":$',
+        r'^"HA Font (\d+)%":$',
         text,
         flags=re.MULTILINE,
     )
 
     assert names == ["100", "110", "115", "120", "125", "130", "140", "150"]
-    assert text.count("ha-font-size-scale:") == len(names)
+    assert text.count("ha-font-size-scale:") == len(names) * 2
 
 
-def test_theme_file_only_sets_font_scale() -> None:
+def test_theme_file_only_sets_font_scale_inside_modes() -> None:
     text = THEME_FILE.read_text(encoding="utf-8")
-    theme_keys = [
-        line.strip().split(":", 1)[0]
-        for line in text.splitlines()
-        if line.startswith("  ") and ":" in line
-    ]
 
-    assert set(theme_keys) == {"ha-font-size-scale"}
+    assert text.count("modes:") == 8
+    assert text.count("light:") == 8
+    assert text.count("dark:") == 8
+    assert re.findall(
+        r"^\s+ha-font-size-scale:\s",
+        text,
+        flags=re.MULTILINE,
+    )

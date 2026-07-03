@@ -10,16 +10,16 @@ Provide Home Assistant themes that increase the default UI font size without run
 
 Users choose the font size through Home Assistant's normal theme selector:
 
-- `HA Utils Default Font 100%`
-- `HA Utils Default Font 110%`
-- `HA Utils Default Font 115%`
-- `HA Utils Default Font 120%`
-- `HA Utils Default Font 125%`
-- `HA Utils Default Font 130%`
-- `HA Utils Default Font 140%`
-- `HA Utils Default Font 150%`
+- `HA Font 100%`
+- `HA Font 110%`
+- `HA Font 115%`
+- `HA Font 120%`
+- `HA Font 125%`
+- `HA Font 130%`
+- `HA Font 140%`
+- `HA Font 150%`
 
-Each theme only sets `ha-font-size-scale`; all other values fall back to Home Assistant's built-in default theme.
+Each theme only sets `ha-font-size-scale` in both `light` and `dark` modes; all other values fall back to Home Assistant's built-in light/dark theme bases.
 
 ---
 
@@ -29,6 +29,7 @@ Each theme only sets `ha-font-size-scale`; all other values fall back to Home As
 |------|--------|
 | Theme YAML file | Done |
 | Multiple selectable font sizes | Done |
+| Light/dark mode support | Done |
 | No custom integration/runtime JS/actions | Done |
 | README/docs for theme-only install | Done |
 | Theme-pack validation test | Done |
@@ -64,10 +65,12 @@ ha-utils/
    ```
 
 3. Restart Home Assistant once after enabling themes.
-4. Select a theme such as `HA Utils Default Font 120%` from the HA theme selector.
+4. Select a theme such as `HA Font 120%` from the HA theme selector.
 5. Test in both web and Companion App.
 
 If upgrading from the old integration, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
+
+The Auto/Light/Dark selector is supported through the YAML `modes` structure. The built-in primary/accent color pickers are not preserved for custom themes; those controls are special to the built-in `Home Assistant` theme.
 
 ---
 

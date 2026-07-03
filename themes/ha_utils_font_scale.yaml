@@ -1,29 +1,61 @@
 # HA Utils default font-size themes.
 #
 # These themes intentionally set only Home Assistant's typography scale.
-# All colors, spacing, and other variables fall back to the built-in default
-# theme values.
+# Light/dark modes are declared so Home Assistant can still use the default
+# light/dark bases and show the mode selector for this custom theme.
 
-"HA Utils Default Font 100%":
-  ha-font-size-scale: "1"
+"HA Font 100%":
+  modes:
+    light:
+      ha-font-size-scale: "1"
+    dark:
+      ha-font-size-scale: "1"
 
-"HA Utils Default Font 110%":
-  ha-font-size-scale: "1.1"
+"HA Font 110%":
+  modes:
+    light:
+      ha-font-size-scale: "1.1"
+    dark:
+      ha-font-size-scale: "1.1"
 
-"HA Utils Default Font 115%":
-  ha-font-size-scale: "1.15"
+"HA Font 115%":
+  modes:
+    light:
+      ha-font-size-scale: "1.15"
+    dark:
+      ha-font-size-scale: "1.15"
 
-"HA Utils Default Font 120%":
-  ha-font-size-scale: "1.2"
+"HA Font 120%":
+  modes:
+    light:
+      ha-font-size-scale: "1.2"
+    dark:
+      ha-font-size-scale: "1.2"
 
-"HA Utils Default Font 125%":
-  ha-font-size-scale: "1.25"
+"HA Font 125%":
+  modes:
+    light:
+      ha-font-size-scale: "1.25"
+    dark:
+      ha-font-size-scale: "1.25"
 
-"HA Utils Default Font 130%":
-  ha-font-size-scale: "1.3"
+"HA Font 130%":
+  modes:
+    light:
+      ha-font-size-scale: "1.3"
+    dark:
+      ha-font-size-scale: "1.3"
 
-"HA Utils Default Font 140%":
-  ha-font-size-scale: "1.4"
+"HA Font 140%":
+  modes:
+    light:
+      ha-font-size-scale: "1.4"
+    dark:
+      ha-font-size-scale: "1.4"
 
-"HA Utils Default Font 150%":
-  ha-font-size-scale: "1.5"
+"HA Font 150%":
+  modes:
+    light:
+      ha-font-size-scale: "1.5"
+    dark:
+      ha-font-size-scale: "1.5"
