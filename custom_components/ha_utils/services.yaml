@@ -4,3 +4,35 @@ deploy_bundled:
     Copy missing HA Utils bundled resources into /config (themes, packages,
     blueprints, and other supported folders). Existing files are never
     overwritten.
+
+expose_entities_to_voice_assistant:
+  name: Expose entities to voice assistant
+  description: >-
+    Expose selected entities to voice assistants. If no entities are selected,
+    all currently unexposed entities are exposed for the selected assistant(s).
+  fields:
+    entity_ids:
+      name: Entities
+      description: >-
+        Optional list of entities to expose. Leave empty to expose all entities
+        that are not already exposed.
+      required: false
+      selector:
+        entity:
+          multiple: true
+    assistants:
+      name: Voice assistants
+      description: Voice assistants to expose entities to.
+      required: false
+      default:
+        - conversation
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Assist
+              value: conversation
+            - label: Alexa
+              value: cloud.alexa
+            - label: Google Assistant
+              value: cloud.google_assistant

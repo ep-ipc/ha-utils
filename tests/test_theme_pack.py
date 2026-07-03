@@ -98,6 +98,24 @@ def test_hacs_metadata_points_to_theme_file() -> None:
         assert (BLUEPRINT_DIR / blueprint).is_file()
 
 
+def test_weather_blueprints_use_weather_entities_for_triggers() -> None:
+    for blueprint in BLUEPRINT_FILES:
+        text = (BLUEPRINT_DIR / blueprint).read_text(encoding="utf-8")
+        assert "domain: weather" in text
+        assert "entity_id: !input weather_entity" in text
+        assert "domain: sensor" not in text
+
+    assert "attribute: wind_speed" in (BLUEPRINT_DIR / "high_wind.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert "attribute: temperature" in (BLUEPRINT_DIR / "hot_day.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert "attribute: temperature" in (BLUEPRINT_DIR / "cold_day.yaml").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_manifest_has_hacs_required_keys() -> None:
     manifest = json.loads(
         (
@@ -161,3 +179,18 @@ def test_deploy_copies_missing_files_without_overwriting(tmp_path: Path) -> None
 
     assert third.copied == ["blueprints/automation/ha_utils/hot_day.yaml"]
     assert missing.is_file()
+
+
+def test_voice_helper_targets_selected_or_all_entities() -> None:
+    voice = load_ha_utils_module("voice")
+
+    class States:
+        def async_entity_ids(self) -> list[str]:
+            return ["light.kitchen", "switch.fan"]
+
+    hass = types.SimpleNamespace(states=States())
+
+    assert voice._target_entity_ids(hass, ["light.kitchen", "light.kitchen"]) == [
+        "light.kitchen"
+    ]
+    assert voice._target_entity_ids(hass, None) == ["light.kitchen", "switch.fan"]

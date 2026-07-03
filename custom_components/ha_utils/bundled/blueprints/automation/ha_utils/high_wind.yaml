@@ -1,18 +1,18 @@
 blueprint:
   name: HA Utils - High wind alert
   description: >
-    Run actions when a wind speed sensor rises above a configurable threshold.
+    Run actions when a weather entity reports wind speed above a configurable threshold.
     Use this for notifications, closing covers, securing outdoor devices, or
     pausing outdoor automations.
   domain: automation
   source_url: https://github.com/ep-ipc/ha-utils
   input:
-    wind_speed_sensor:
-      name: Wind speed sensor
-      description: Sensor that reports current wind speed.
+    weather_entity:
+      name: Weather entity
+      description: Weather entity that provides a wind_speed attribute.
       selector:
         entity:
-          domain: sensor
+          domain: weather
     wind_speed_threshold:
       name: Wind speed threshold
       description: Trigger when wind speed rises above this value.
@@ -48,7 +48,8 @@ max_exceeded: silent
 
 trigger:
   - platform: numeric_state
-    entity_id: !input wind_speed_sensor
+    entity_id: !input weather_entity
+    attribute: wind_speed
     above: !input wind_speed_threshold
     for: !input hold_duration
 
@@ -60,8 +61,8 @@ condition:
 
 variables:
   cooldown: !input cooldown
-  wind_speed_sensor: !input wind_speed_sensor
+  weather_entity: !input weather_entity
   wind_speed_threshold: !input wind_speed_threshold
-  wind_speed: "{{ states(wind_speed_sensor) }}"
+  wind_speed: "{{ state_attr(weather_entity, 'wind_speed') }}"
 
 action: !input actions

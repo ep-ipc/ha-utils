@@ -1,18 +1,18 @@
 blueprint:
   name: HA Utils - Hot day alert
   description: >
-    Run actions when a temperature sensor rises above a configurable threshold.
+    Run actions when a weather entity reports temperature above a configurable threshold.
     Use this for heat alerts, closing blinds, adjusting climate schedules, or
     notifying household members.
   domain: automation
   source_url: https://github.com/ep-ipc/ha-utils
   input:
-    temperature_sensor:
-      name: Temperature sensor
-      description: Sensor that reports the outdoor or target temperature.
+    weather_entity:
+      name: Weather entity
+      description: Weather entity that provides a temperature attribute.
       selector:
         entity:
-          domain: sensor
+          domain: weather
     temperature_threshold:
       name: High temperature threshold
       description: Trigger when temperature rises above this value.
@@ -48,7 +48,8 @@ max_exceeded: silent
 
 trigger:
   - platform: numeric_state
-    entity_id: !input temperature_sensor
+    entity_id: !input weather_entity
+    attribute: temperature
     above: !input temperature_threshold
     for: !input hold_duration
 
@@ -60,8 +61,8 @@ condition:
 
 variables:
   cooldown: !input cooldown
-  temperature_sensor: !input temperature_sensor
+  weather_entity: !input weather_entity
   temperature_threshold: !input temperature_threshold
-  temperature: "{{ states(temperature_sensor) }}"
+  temperature: "{{ state_attr(weather_entity, 'temperature') }}"
 
 action: !input actions

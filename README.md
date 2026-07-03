@@ -63,7 +63,28 @@ The integration also deploys these automation blueprints:
 
 After install, find them in **Settings > Automations & scenes > Blueprints**.
 
-Each blueprint lets you choose the relevant sensor/weather entity, thresholds or conditions, cooldown, and the actions to run.
+Each blueprint lets you choose the relevant weather entity, thresholds or conditions, cooldown, and the actions to run.
+
+All weather alert blueprints use a `weather` entity as the trigger source:
+
+- High wind uses the weather entity's `wind_speed` attribute.
+- Hot day and cold day use the weather entity's `temperature` attribute.
+- Possible thunderstorm uses the weather entity's state/condition.
+
+## Voice Assistant Exposure Action
+
+The integration registers this Developer Tools action:
+
+- `ha_utils.expose_entities_to_voice_assistant`
+
+Fields:
+
+- `Entities`: optional multi-entity selector. Leave empty to expose all entities that are not already exposed.
+- `Voice assistants`: Assist by default (`conversation`), with optional Alexa and Google Assistant if available.
+
+Run it from **Settings > Developer tools > Actions**.
+
+Home Assistant's action form does not support dynamic filtering of already exposed entities, nor select-all/unselect-all buttons for custom service fields. The action handles this server-side by skipping entities that are already exposed.
 
 ## Deploy Policy
 

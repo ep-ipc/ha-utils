@@ -40,6 +40,7 @@ Future bundled resource types:
 | Config flow | Done |
 | Copy-if-missing deployer | Done |
 | Manual `ha_utils.deploy_bundled` action | Done |
+| Manual `ha_utils.expose_entities_to_voice_assistant` action | Done |
 | Bundled font-scale theme | Done |
 | Bundled weather automation blueprints | Done |
 | README/docs for integration install | Done |
@@ -57,7 +58,8 @@ flowchart TB
     Deploy --> Themes["/config/themes"]
     Deploy --> Packages["/config/packages (future)"]
     Deploy --> Blueprints["/config/blueprints (future)"]
-    Action["ha_utils.deploy_bundled"] --> Deploy
+    DeployAction["ha_utils.deploy_bundled"] --> Deploy
+    VoiceAction["ha_utils.expose_entities_to_voice_assistant"] --> Voice["Expose entities to voice assistants"]
 ```
 
 ---
@@ -110,6 +112,7 @@ ha-utils/
 7. Reload themes or restart Home Assistant.
 8. Select a theme such as `HA Font 120%` from the theme selector.
 9. Open **Settings > Automations & scenes > Blueprints** to create automations from the HA Utils blueprints.
+10. Use **Settings > Developer tools > Actions > `ha_utils.expose_entities_to_voice_assistant`** to expose selected entities, or leave selection empty to expose all unexposed entities.
 
 If upgrading from the old test theme, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
 
@@ -132,3 +135,30 @@ If upgrading from the old test theme, delete `/config/themes/ha_utils_typography
 The font themes only set `ha-font-size-scale` in both `light` and `dark` modes; all other values fall back to Home Assistant's built-in light/dark bases.
 
 The Auto/Light/Dark selector is supported through the YAML `modes` structure. The built-in primary/accent color pickers are not preserved for custom themes; those controls are special to the built-in `Home Assistant` theme.
+
+---
+
+## Weather Blueprint Notes
+
+All weather alert blueprints use a `weather` entity as the trigger source:
+
+- High wind uses the weather entity `wind_speed` attribute.
+- Hot day uses the weather entity `temperature` attribute and an upper threshold.
+- Cold day uses the weather entity `temperature` attribute and a lower threshold.
+- Possible thunderstorm uses the weather entity state/condition.
+
+---
+
+## Voice Exposure Notes
+
+`ha_utils.expose_entities_to_voice_assistant` is a Developer Tools action, not a bundled script.
+
+Behavior:
+
+- If entities are selected, expose only those entities.
+- If no entities are selected, expose all currently unexposed entities.
+- Already exposed entities are skipped.
+- Assist (`conversation`) is selected by default.
+- Alexa (`cloud.alexa`) and Google Assistant (`cloud.google_assistant`) can also be selected when available.
+
+Home Assistant's action form does not support dynamic filtering of already exposed entities or select-all/unselect-all buttons for custom service fields. That would require a dedicated frontend panel. For now, the backend performs the filtering.
