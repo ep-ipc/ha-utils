@@ -2,8 +2,27 @@ deploy_bundled:
   name: Deploy bundled resources
   description: >-
     Copy missing HA Utils bundled resources into /config (themes, packages,
-    blueprints, and other supported folders). Existing files are never
-    overwritten.
+    blueprints, and other supported folders). Existing files are skipped unless
+    overwrite_existing is enabled.
+  fields:
+    overwrite_existing:
+      name: Overwrite existing files
+      description: >-
+        Replace existing bundled resources with the integration's current
+        versions. Use this to update previously deployed blueprints.
+      required: false
+      default: false
+      selector:
+        boolean:
+    backup_existing:
+      name: Backup before overwrite
+      description: >-
+        Create .bak files before replacing existing resources. Only applies
+        when overwrite_existing is enabled.
+      required: false
+      default: true
+      selector:
+        boolean:
 
 expose_entities_to_voice_assistant:
   name: Expose entities to voice assistant

@@ -120,13 +120,15 @@ If upgrading from the old test theme, delete `/config/themes/ha_utils_typography
 
 ## Deploy Rules
 
-- Copy-if-missing only.
-- Never overwrite files under `/config`.
+- Copy-if-missing by default.
+- Never overwrite files under `/config` during startup/setup.
+- `ha_utils.deploy_bundled` can opt into `overwrite_existing: true` to refresh existing bundled resources after an integration upgrade.
+- When overwriting, `backup_existing: true` creates `.bak` files first.
 - Bundle paths mirror `/config` destinations:
   - `bundled/themes/foo.yaml` -> `/config/themes/foo.yaml`
   - `bundled/packages/foo.yaml` -> `/config/packages/foo.yaml`
   - `bundled/blueprints/...` -> `/config/blueprints/...`
-- `ha_utils.deploy_bundled` re-runs the same deployer for missing files.
+- `ha_utils.deploy_bundled` re-runs the same deployer for missing files or, when explicitly requested, updates existing files.
 
 ---
 

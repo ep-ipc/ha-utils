@@ -88,9 +88,18 @@ Home Assistant's action form does not support dynamic filtering of already expos
 
 ## Deploy Policy
 
-Bundled resources are **copy-if-missing only**. Existing files in `/config` are never overwritten.
+Bundled resources are **copy-if-missing by default**. Existing files in `/config` are skipped during normal startup/setup.
 
 Run **Developer tools > Actions > `ha_utils.deploy_bundled`** to copy any bundled files that are missing.
+
+To update already deployed blueprints after upgrading HA Utils:
+
+1. Open **Settings > Developer tools > Actions**.
+2. Run `ha_utils.deploy_bundled`.
+3. Set `overwrite_existing: true`.
+4. Keep `backup_existing: true` unless you intentionally do not want `.bak` files.
+
+This refreshes existing bundled resources from the integration and writes backups such as `hot_day.yaml.bak` first.
 
 ## Planned Resource Types
 

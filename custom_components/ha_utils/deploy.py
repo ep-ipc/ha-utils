@@ -23,7 +23,9 @@ class DeployResult:
     """Outcome of deploying bundled resources."""
 
     copied: list[str] = field(default_factory=list)
+    updated: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
+    backed_up: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
 
@@ -31,7 +33,12 @@ def _bundled_root() -> Path:
     return Path(__file__).resolve().parent / "bundled"
 
 
-def deploy_bundled_assets(hass: HomeAssistant) -> DeployResult:
+def deploy_bundled_assets(
+    hass: HomeAssistant,
+    *,
+    overwrite_existing: bool = False,
+    backup_existing: bool = True,
+) -> DeployResult:
     """Copy bundled files into the HA config directory.
 
     Bundled paths intentionally mirror the Home Assistant config tree, e.g.:
@@ -55,12 +62,23 @@ def deploy_bundled_assets(hass: HomeAssistant) -> DeployResult:
         rel_str = rel.as_posix()
         dest = config_dir / rel
 
-        if dest.exists():
-            result.skipped.append(rel_str)
-            continue
-
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
+            if dest.exists():
+                if not overwrite_existing or src.read_bytes() == dest.read_bytes():
+                    result.skipped.append(rel_str)
+                    continue
+
+                if backup_existing:
+                    backup = dest.with_name(f"{dest.name}.bak")
+                    shutil.copy2(dest, backup)
+                    result.backed_up.append(str(backup.relative_to(config_dir)))
+
+                shutil.copy2(src, dest)
+                result.updated.append(rel_str)
+                _LOGGER.info("Updated bundled resource: %s", rel_str)
+                continue
+
             shutil.copy2(src, dest)
             result.copied.append(rel_str)
             _LOGGER.info("Deployed bundled resource: %s", rel_str)
@@ -79,7 +97,9 @@ def _write_marker(config_dir: Path, result: DeployResult) -> None:
         "version": BUNDLE_VERSION,
         "deployed_at": datetime.now(UTC).isoformat(),
         "copied": result.copied,
+        "updated": result.updated,
         "skipped": result.skipped,
+        "backed_up": result.backed_up,
     }
 
     try:

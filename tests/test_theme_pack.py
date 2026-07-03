@@ -181,6 +181,37 @@ def test_deploy_copies_missing_files_without_overwriting(tmp_path: Path) -> None
     assert missing.is_file()
 
 
+def test_deploy_can_overwrite_existing_files_with_backup(tmp_path: Path) -> None:
+    deploy_bundled_assets = load_ha_utils_module("deploy").deploy_bundled_assets
+    hass = types.SimpleNamespace(
+        config=types.SimpleNamespace(config_dir=str(tmp_path))
+    )
+    deploy_bundled_assets(hass)
+
+    stale_blueprint = (
+        tmp_path / "blueprints" / "automation" / "ha_utils" / "hot_day.yaml"
+    )
+    stale_blueprint.write_text("user edited old blueprint\n", encoding="utf-8")
+
+    result = deploy_bundled_assets(
+        hass,
+        overwrite_existing=True,
+        backup_existing=True,
+    )
+
+    assert result.errors == []
+    assert result.updated == ["blueprints/automation/ha_utils/hot_day.yaml"]
+    assert result.backed_up == [
+        "blueprints/automation/ha_utils/hot_day.yaml.bak"
+    ]
+    assert stale_blueprint.read_text(encoding="utf-8") == (
+        BLUEPRINT_DIR / "hot_day.yaml"
+    ).read_text(encoding="utf-8")
+    assert stale_blueprint.with_name("hot_day.yaml.bak").read_text(
+        encoding="utf-8"
+    ) == "user edited old blueprint\n"
+
+
 def test_voice_helper_targets_selected_or_all_entities() -> None:
     voice = load_ha_utils_module("voice")
 

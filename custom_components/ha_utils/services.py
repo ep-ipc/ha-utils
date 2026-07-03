@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 
 import voluptuous as vol
 
@@ -22,6 +23,13 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_DEPLOY_BUNDLED = "deploy_bundled"
 SERVICE_EXPOSE_ENTITIES = "expose_entities_to_voice_assistant"
 
+DEPLOY_BUNDLED_SCHEMA = vol.Schema(
+    {
+        vol.Optional("overwrite_existing", default=False): cv.boolean,
+        vol.Optional("backup_existing", default=True): cv.boolean,
+    }
+)
+
 EXPOSE_ENTITIES_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_ids", default=[]): cv.entity_ids,
@@ -38,10 +46,21 @@ def async_setup_services(hass: HomeAssistant) -> None:
     """Register HA Utils services."""
 
     async def handle_deploy_bundled(call: ServiceCall) -> None:
-        result = await hass.async_add_executor_job(deploy_bundled_assets, hass)
+        result = await hass.async_add_executor_job(
+            partial(
+                deploy_bundled_assets,
+                hass,
+                overwrite_existing=call.data["overwrite_existing"],
+                backup_existing=call.data["backup_existing"],
+            )
+        )
 
         for rel in result.copied:
             _LOGGER.info("Deployed bundled resource: %s", rel)
+        for rel in result.updated:
+            _LOGGER.info("Updated bundled resource: %s", rel)
+        for rel in result.backed_up:
+            _LOGGER.info("Backed up existing bundled resource: %s", rel)
         if result.skipped:
             _LOGGER.debug(
                 "Skipped %d existing bundled resource(s)",
@@ -69,6 +88,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_DEPLOY_BUNDLED,
         handle_deploy_bundled,
+        schema=DEPLOY_BUNDLED_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
