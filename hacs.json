@@ -1,4 +1,6 @@
 {
-  "name": "HA Utils Font Scale Themes",
+  "name": "Home Assistant Utils",
+  "content_in_root": false,
+  "homeassistant": "2024.4.0",
   "render_readme": true
 }

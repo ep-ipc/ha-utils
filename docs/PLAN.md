@@ -1,25 +1,26 @@
-# HA Utils — Font Scale Theme Pack
+# HA Utils — Bundled Resource Integration
 
-Current plan for the simplified repository.
+Current plan for the repository.
 
 ---
 
-## Current Goal
+## Goal
 
-Provide Home Assistant themes that increase the default UI font size without running any custom integration code.
+Build a HACS custom integration that installs into `/config/custom_components/ha_utils` and deploys bundled Home Assistant resources into the correct `/config` folders.
 
-Users choose the font size through Home Assistant's normal theme selector:
+Current bundled resource:
 
-- `HA Font 100%`
-- `HA Font 110%`
-- `HA Font 115%`
-- `HA Font 120%`
-- `HA Font 125%`
-- `HA Font 130%`
-- `HA Font 140%`
-- `HA Font 150%`
+- `custom_components/ha_utils/bundled/themes/ha_utils_font_scale.yaml`
 
-Each theme only sets `ha-font-size-scale` in both `light` and `dark` modes; all other values fall back to Home Assistant's built-in light/dark theme bases.
+Deployment result:
+
+- `/config/themes/ha_utils_font_scale.yaml`
+
+Future bundled resource types:
+
+- `/config/packages`
+- `/config/blueprints`
+- Additional `/config/themes`
 
 ---
 
@@ -27,12 +28,28 @@ Each theme only sets `ha-font-size-scale` in both `light` and `dark` modes; all 
 
 | Area | Status |
 |------|--------|
-| Theme YAML file | Done |
-| Multiple selectable font sizes | Done |
-| Light/dark mode support | Done |
-| No custom integration/runtime JS/actions | Done |
-| README/docs for theme-only install | Done |
-| Theme-pack validation test | Done |
+| HACS integration scaffold | Done |
+| Config flow | Done |
+| Copy-if-missing deployer | Done |
+| Manual `ha_utils.deploy_bundled` action | Done |
+| Bundled font-scale theme | Done |
+| README/docs for integration install | Done |
+| Tests for theme/deploy layout | Done |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    HACS["HACS Integration install"] --> CC["/config/custom_components/ha_utils"]
+    Restart["HA restart + add integration"] --> Setup["async_setup_entry"]
+    Setup --> Deploy["deploy_bundled_assets"]
+    Deploy --> Themes["/config/themes"]
+    Deploy --> Packages["/config/packages (future)"]
+    Deploy --> Blueprints["/config/blueprints (future)"]
+    Action["ha_utils.deploy_bundled"] --> Deploy
+```
 
 ---
 
@@ -40,8 +57,21 @@ Each theme only sets `ha-font-size-scale` in both `light` and `dark` modes; all 
 
 ```text
 ha-utils/
-├── themes/
-│   └── ha_utils_font_scale.yaml
+├── custom_components/
+│   └── ha_utils/
+│       ├── __init__.py
+│       ├── manifest.json
+│       ├── config_flow.py
+│       ├── const.py
+│       ├── deploy.py
+│       ├── services.py
+│       ├── services.yaml
+│       ├── strings.json
+│       └── bundled/
+│           ├── themes/
+│           │   └── ha_utils_font_scale.yaml
+│           ├── packages/
+│           └── blueprints/
 ├── tests/
 │   └── test_theme_pack.py
 ├── docs/
@@ -55,49 +85,39 @@ ha-utils/
 
 ## Install/Test Flow
 
-1. Install through HACS as a custom repository of type **Theme**. HACS copies `themes/ha_utils_font_scale.yaml` to `/config/themes/` automatically.
-   - Manual fallback: copy `themes/ha_utils_font_scale.yaml` to `/config/themes/`.
-2. Ensure `/config/configuration.yaml` contains:
+1. Add this repository to HACS as category **Integration**.
+2. HACS downloads it to `/config/custom_components/ha_utils`.
+3. Restart Home Assistant.
+4. Add **Home Assistant Utils** from **Settings > Devices & services**.
+5. Integration setup copies bundled resources into `/config`.
+6. Ensure `/config/configuration.yaml` contains:
 
    ```yaml
    frontend:
      themes: !include_dir_merge_named themes
    ```
 
-3. Restart Home Assistant once after enabling themes.
-4. Select a theme such as `HA Font 120%` from the HA theme selector.
-5. Test in both web and Companion App.
+7. Reload themes or restart Home Assistant.
+8. Select a theme such as `HA Font 120%` from the theme selector.
 
-If upgrading from the old integration, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
-
-The Auto/Light/Dark selector is supported through the YAML `modes` structure. The built-in primary/accent color pickers are not preserved for custom themes; those controls are special to the built-in `Home Assistant` theme.
+If upgrading from the old test theme, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
 
 ---
 
-## What Remains From The Original Plan
+## Deploy Rules
 
-Still present:
+- Copy-if-missing only.
+- Never overwrite files under `/config`.
+- Bundle paths mirror `/config` destinations:
+  - `bundled/themes/foo.yaml` -> `/config/themes/foo.yaml`
+  - `bundled/packages/foo.yaml` -> `/config/packages/foo.yaml`
+  - `bundled/blueprints/...` -> `/config/blueprints/...`
+- `ha_utils.deploy_bundled` re-runs the same deployer for missing files.
 
-- A reusable Home Assistant utility repo
-- HACS-compatible metadata
-- Theme-based default UI font scaling
-- Documentation and tests
+---
 
-Removed:
+## Theme Notes
 
-- Custom integration under `custom_components/`
-- Config flow
-- Developer Tools actions/services
-- Runtime frontend JavaScript
-- Frontend system storage
-- Package deployment
-- Repair issues
-- Blueprint deployment
-- Custom theme patching logic
-- Local theme patching CLI
+The font themes only set `ha-font-size-scale` in both `light` and `dark` modes; all other values fall back to Home Assistant's built-in light/dark bases.
 
-To add later:
-
-- Blueprints
-- Automations
-- Optional helpers/scripts if we decide a dynamic numeric font-size control is worth the extra complexity
+The Auto/Light/Dark selector is supported through the YAML `modes` structure. The built-in primary/accent color pickers are not preserved for custom themes; those controls are special to the built-in `Home Assistant` theme.

@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Assistant Utils",
+        "description": "Install HA Utils and deploy bundled resources such as themes, packages, and blueprints into your Home Assistant config directory."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Home Assistant Utils is already configured."
+    }
+  }
+}

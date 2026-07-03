@@ -1,0 +1,6 @@
+deploy_bundled:
+  name: Deploy bundled resources
+  description: >-
+    Copy missing HA Utils bundled resources into /config (themes, packages,
+    blueprints, and other supported folders). Existing files are never
+    overwritten.

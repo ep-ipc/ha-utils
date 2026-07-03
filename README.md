@@ -1,21 +1,12 @@
-# HA Utils Font Scale Themes
+# Home Assistant Utils
 
-Theme pack for making the default Home Assistant UI font larger without a custom integration, action, script, or frontend JavaScript.
+HACS custom integration that deploys reusable Home Assistant resources into your `/config` directory.
 
-The themes only set one variable inside both light and dark modes:
+Current bundled resource:
 
-```yaml
-"HA Font 120%":
-  modes:
-    light:
-      ha-font-size-scale: "1.2"
-    dark:
-      ha-font-size-scale: "1.2"
-```
+- `themes/ha_utils_font_scale.yaml` → copied to `/config/themes/ha_utils_font_scale.yaml`
 
-Everything else falls back to Home Assistant's built-in light/dark theme base.
-
-## Included Themes
+The font-scale theme provides these selectable themes:
 
 - `HA Font 100%`
 - `HA Font 110%`
@@ -26,49 +17,60 @@ Everything else falls back to Home Assistant's built-in light/dark theme base.
 - `HA Font 140%`
 - `HA Font 150%`
 
-The number is the font scale percentage. For example, `HA Font 120%` sets `ha-font-size-scale` to `1.2`.
+Each theme only sets `ha-font-size-scale` in both light and dark modes, so Home Assistant uses the default light/dark bases and still shows the Auto/Light/Dark selector.
 
 ## Install
 
-Install with HACS as a custom repository of type **Theme**. HACS will automatically copy `themes/ha_utils_font_scale.yaml` into Home Assistant's `/config/themes/` directory during install/update.
+Install this repository in HACS as a custom repository of type **Integration**.
 
-Manual fallback: copy `themes/ha_utils_font_scale.yaml` into `/config/themes/` yourself.
+After HACS downloads the integration:
 
-Enable themes in `/config/configuration.yaml` if you have not already:
+1. Restart Home Assistant.
+2. Go to **Settings > Devices & services > Add integration**.
+3. Add **Home Assistant Utils**.
+4. The integration copies bundled resources into `/config` using copy-if-missing.
+
+If HACS says it will install to `/config/custom_components/ha_utils`, that is expected for this project. The integration then copies bundled resources to their real destinations, such as `/config/themes`, when Home Assistant sets it up.
+
+## Required HA Theme Config
+
+For Home Assistant to load copied theme files, make sure `/config/configuration.yaml` contains:
 
 ```yaml
 frontend:
   themes: !include_dir_merge_named themes
 ```
 
-Restart Home Assistant once after adding the `frontend.themes` include. If themes were already enabled, use **Developer tools > YAML > Reload themes** after installing/updating the theme.
+Restart Home Assistant once after adding this include. If the include already exists, use **Developer tools > YAML > Reload themes** after installing/updating HA Utils.
 
-## Use
+## Use The Font Theme
 
-1. Open **Settings > System > Restart Home Assistant** after first install, or run **Developer tools > YAML > Reload themes** after changing only theme files.
+1. Reload themes or restart Home Assistant after the theme file is copied.
 2. Open your profile/theme selector.
-3. Choose one of the `HA Font ...` themes.
+3. Choose one of the `HA Font ...` themes, for example `HA Font 120%`.
 
 This works in the web UI and Companion App because it uses Home Assistant's normal theme system.
 
-Each theme declares both `light` and `dark` modes, so Home Assistant can still show the Auto/Light/Dark selector for the custom theme.
+## Deploy Policy
 
-## Upgrading From The Old Integration
+Bundled resources are **copy-if-missing only**. Existing files in `/config` are never overwritten.
 
-If you previously tested the custom integration version, remove the old theme file:
+Run **Developer tools > Actions > `ha_utils.deploy_bundled`** to copy any bundled files that are missing.
 
-```text
-/config/themes/ha_utils_typography.yaml
-```
+## Planned Resource Types
 
-Then reload themes or restart Home Assistant. The old `ha_utils_typography` theme used scale `1`, so selecting it will not increase font size.
+This integration is intended to grow into a small HA utility package. Future bundled resources can be added under:
+
+- `custom_components/ha_utils/bundled/themes/`
+- `custom_components/ha_utils/bundled/packages/`
+- `custom_components/ha_utils/bundled/blueprints/`
+
+The deployer mirrors that folder structure into `/config`.
 
 ## Notes
 
-- Home Assistant's built-in UI does not provide a numeric editor for arbitrary theme variables. To choose font size from the UI without automations or scripts, this repo ships multiple prebuilt theme sizes.
-- Home Assistant's primary/accent color pickers are special to the built-in `Home Assistant` theme. Custom themes can define colors in YAML, but they cannot currently keep those color picker controls while staying theme-only.
-- Theme selection can be per user/browser/app depending on how you select it in Home Assistant. To apply broadly, set the theme as the default/backend-selected theme and avoid per-device overrides.
-- Existing users of the previous `ha_utils` custom integration can remove `custom_components/ha_utils`; it is no longer needed for this theme-only version.
+- Home Assistant's primary/accent color pickers are special to the built-in `Home Assistant` theme. Custom themes can define colors in YAML, but they cannot keep those color picker controls.
+- If you previously tested `ha_utils_typography`, delete `/config/themes/ha_utils_typography.yaml`; it used scale `1` and will not increase font size.
 
 ## Local Development
 
