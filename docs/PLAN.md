@@ -1,49 +1,37 @@
-# HA Utils — Default Theme Font Scale
+# HA Utils — Font Scale Theme Pack
 
-Current plan for the simplified `ha-utils` repository.
-
-**Integration version:** 1.2.0 (see `custom_components/ha_utils/manifest.json`)
+Current plan for the simplified repository.
 
 ---
 
 ## Current Goal
 
-Provide one Home Assistant Developer Tools action that updates the default Home Assistant theme font size at runtime.
+Provide Home Assistant themes that increase the default UI font size without running any custom integration code.
 
-Primary UX:
+Users choose the font size through Home Assistant's normal theme selector:
 
-1. Open **Settings > Developer tools > Actions**
-2. Run `ha_utils.set_font_scale`
-3. Enter a `scale` value such as `1.2`
+- `HA Utils Default Font 100%`
+- `HA Utils Default Font 110%`
+- `HA Utils Default Font 115%`
+- `HA Utils Default Font 120%`
+- `HA Utils Default Font 125%`
+- `HA Utils Default Font 130%`
+- `HA Utils Default Font 140%`
+- `HA Utils Default Font 150%`
 
-No custom theme YAML files are patched. No `/config/themes` folder is required.
+Each theme only sets `ha-font-size-scale`; all other values fall back to Home Assistant's built-in default theme.
 
 ---
 
-## Current Phase Tracker
+## Current Tracker
 
 | Area | Status |
 |------|--------|
-| HACS custom integration scaffold | Done |
-| Config flow | Done |
-| Developer Tools action registration | Done |
-| Frontend module registration | Done |
-| Runtime default-theme font scaling | Done |
-| Tests for runtime scale payload | Done |
-| README/docs for current scope | Done |
-
----
-
-## Runtime Architecture
-
-```mermaid
-flowchart TB
-    User["Settings > Developer tools > Actions"] --> Action["ha_utils.set_font_scale"]
-    Action --> Storage["frontend system storage: ha_utils_font_scale"]
-    Frontend["font-scale.js"] --> Storage
-    Frontend --> CSS["documentElement --ha-font-size-scale"]
-    CSS --> HA["Default Home Assistant theme font tokens"]
-```
+| Theme YAML file | Done |
+| Multiple selectable font sizes | Done |
+| No custom integration/runtime JS/actions | Done |
+| README/docs for theme-only install | Done |
+| Theme-pack validation test | Done |
 
 ---
 
@@ -51,22 +39,10 @@ flowchart TB
 
 ```text
 ha-utils/
-├── custom_components/
-│   └── ha_utils/
-│       ├── __init__.py
-│       ├── manifest.json
-│       ├── config_flow.py
-│       ├── const.py
-│       ├── frontend_register.py
-│       ├── runtime_scale.py
-│       ├── services.py
-│       ├── services.yaml
-│       ├── strings.json
-│       └── frontend/
-│           └── font-scale.js
+├── themes/
+│   └── ha_utils_font_scale.yaml
 ├── tests/
-│   ├── conftest.py
-│   └── test_runtime_scale.py
+│   └── test_theme_pack.py
 ├── docs/
 │   └── PLAN.md
 ├── Makefile
@@ -76,42 +52,49 @@ ha-utils/
 
 ---
 
+## Install/Test Flow
+
+1. Install through HACS as a custom repository of type **Theme**. HACS copies `themes/ha_utils_font_scale.yaml` to `/config/themes/` automatically.
+   - Manual fallback: copy `themes/ha_utils_font_scale.yaml` to `/config/themes/`.
+2. Ensure `/config/configuration.yaml` contains:
+
+   ```yaml
+   frontend:
+     themes: !include_dir_merge_named themes
+   ```
+
+3. Restart Home Assistant once after enabling themes.
+4. Select a theme such as `HA Utils Default Font 120%` from the HA theme selector.
+5. Test in both web and Companion App.
+
+If upgrading from the old integration, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
+
+---
+
 ## What Remains From The Original Plan
 
 Still present:
 
-- HACS integration scaffold
+- A reusable Home Assistant utility repo
+- HACS-compatible metadata
+- Theme-based default UI font scaling
+- Documentation and tests
+
+Removed:
+
+- Custom integration under `custom_components/`
 - Config flow
-- Service/action registration
-- Developer Tools action as the primary UX
-- Runtime frontend module
-- Basic tests and documentation
-
-Removed for now:
-
-- Copy-if-missing bundle deployment
-- Bundled package YAML
-- Bundled blueprints
-- `packages:` prerequisite checks
+- Developer Tools actions/services
+- Runtime frontend JavaScript
+- Frontend system storage
+- Package deployment
 - Repair issues
-- Custom theme YAML patching
-- Theme path discovery
-- `ha_utils.reload_themes`
-- Local CLI for patching theme files
+- Blueprint deployment
+- Custom theme patching logic
+- Local theme patching CLI
 
-Not implemented:
+To add later:
 
-- Rich config-flow success screen
-- Device page / diagnostics view
-- Dashboard UI or custom panel for font size
-
----
-
-## Test Checklist
-
-1. Restart Home Assistant after installing or updating the integration.
-2. Add **Home Assistant Utils** under **Settings > Devices & services**.
-3. Confirm **Settings > Developer tools > Actions** lists `ha_utils.set_font_scale`.
-4. Run `ha_utils.set_font_scale` with `scale: 1.2`.
-5. Refresh the browser if needed.
-6. Verify the frontend applies `--ha-font-size-scale: 1.2`.
+- Blueprints
+- Automations
+- Optional helpers/scripts if we decide a dynamic numeric font-size control is worth the extra complexity

@@ -1,0 +1,29 @@
+# HA Utils default font-size themes.
+#
+# These themes intentionally set only Home Assistant's typography scale.
+# All colors, spacing, and other variables fall back to the built-in default
+# theme values.
+
+"HA Utils Default Font 100%":
+  ha-font-size-scale: "1"
+
+"HA Utils Default Font 110%":
+  ha-font-size-scale: "1.1"
+
+"HA Utils Default Font 115%":
+  ha-font-size-scale: "1.15"
+
+"HA Utils Default Font 120%":
+  ha-font-size-scale: "1.2"
+
+"HA Utils Default Font 125%":
+  ha-font-size-scale: "1.25"
+
+"HA Utils Default Font 130%":
+  ha-font-size-scale: "1.3"
+
+"HA Utils Default Font 140%":
+  ha-font-size-scale: "1.4"
+
+"HA Utils Default Font 150%":
+  ha-font-size-scale: "1.5"
