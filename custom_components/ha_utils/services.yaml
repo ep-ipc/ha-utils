@@ -1,0 +1,47 @@
+patch_themes:
+  name: Patch theme typography
+  description: >-
+    Rewrite theme YAML for scalable fonts (HA typography scale, Mushroom keys,
+    card-mod dividers). Creates a .bak backup per changed file unless dry_run.
+  fields:
+    scale:
+      name: Font scale
+      description: ha-font-size-scale multiplier applied to theme files.
+      required: false
+      default: 1.0
+      example: 1.2
+      selector:
+        number:
+          min: 0.5
+          max: 2.5
+          step: 0.05
+          mode: box
+    line_height:
+      name: Line height
+      description: ha-line-height-normal value written into themes.
+      required: false
+      default: 1.8
+      example: 1.8
+      selector:
+        number:
+          min: 1.0
+          max: 3.0
+          step: 0.1
+          mode: box
+    dry_run:
+      name: Dry run
+      description: Preview changes without writing files.
+      required: false
+      default: false
+      selector:
+        boolean:
+
+reload_themes:
+  name: Reload themes
+  description: Reload theme definitions from YAML (frontend.reload_themes).
+
+deploy_bundled:
+  name: Deploy bundled assets
+  description: >-
+    Copy missing package and blueprint files from the integration bundle into
+    your config directory (copy-if-missing only).

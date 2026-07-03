@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Assistant Utils",
+        "description": "Deploy utility packages, blueprints, and register actions for theme typography patching.\n\nAfter setup, enable packages in configuration.yaml if not already present:\n\n{packages_snippet}\n\nThen restart Home Assistant."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Home Assistant Utils is already configured."
+    },
+    "error": {
+      "deploy_failed": "Some bundled files could not be deployed. Check the logs."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Re-deploy bundled assets",
+        "description": "Copy any missing package and blueprint files (existing files are not overwritten)."
+      }
+    }
+  },
+  "issues": {
+    "packages_not_enabled": {
+      "title": "Packages are not enabled in configuration.yaml",
+      "description": "Add the following under homeassistant: in configuration.yaml, then restart Home Assistant:\n\nhomeassistant:\n  packages: !include_dir_named packages"
+    },
+    "package_file_missing": {
+      "title": "HA Utils package file is missing",
+      "description": "Run action ha_utils.deploy_bundled from Developer tools, or use the integration options to re-deploy missing files. Ensure packages are enabled and restart Home Assistant."
+    },
+    "restart_required": {
+      "title": "Restart required after deploying package",
+      "description": "The HA Utils package file was copied to packages/ha_utils.yaml. Restart Home Assistant so the package is loaded."
+    }
+  }
+}

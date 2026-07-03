@@ -1,0 +1,25 @@
+# HA Utils package — optional scripts that chain integration actions.
+# Manual runs: use Settings → Developer tools → Actions (ha_utils.patch_themes).
+
+script:
+  ha_utils_patch_themes:
+    alias: HA Utils — patch themes and reload
+    description: >-
+      Chains ha_utils.patch_themes and ha_utils.reload_themes. For one-off use,
+      prefer Developer tools → Actions instead.
+    sequence:
+      - action: ha_utils.patch_themes
+        data:
+          scale: 1.0
+          line_height: 1.8
+          dry_run: false
+      - action: ha_utils.reload_themes
+
+  ha_utils_patch_themes_dry_run:
+    alias: HA Utils — preview theme patch
+    sequence:
+      - action: ha_utils.patch_themes
+        data:
+          scale: 1.0
+          line_height: 1.8
+          dry_run: true

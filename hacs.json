@@ -1,0 +1,7 @@
+{
+  "name": "Home Assistant Utils",
+  "content_in_root": false,
+  "filename": "ha_utils",
+  "homeassistant": "2024.4.0",
+  "render_readme": true
+}
