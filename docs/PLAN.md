@@ -11,15 +11,23 @@ Build a HACS custom integration that installs into `/config/custom_components/ha
 Current bundled resource:
 
 - `custom_components/ha_utils/bundled/themes/ha_utils_font_scale.yaml`
+- `custom_components/ha_utils/bundled/blueprints/automation/ha_utils/*.yaml`
 
 Deployment result:
 
 - `/config/themes/ha_utils_font_scale.yaml`
+- `/config/blueprints/automation/ha_utils/*.yaml`
+
+Current bundled automation blueprints:
+
+- High wind alert
+- Hot day alert
+- Cold day alert
+- Possible thunderstorm alert
 
 Future bundled resource types:
 
 - `/config/packages`
-- `/config/blueprints`
 - Additional `/config/themes`
 
 ---
@@ -33,6 +41,7 @@ Future bundled resource types:
 | Copy-if-missing deployer | Done |
 | Manual `ha_utils.deploy_bundled` action | Done |
 | Bundled font-scale theme | Done |
+| Bundled weather automation blueprints | Done |
 | README/docs for integration install | Done |
 | Tests for theme/deploy layout | Done |
 
@@ -72,6 +81,7 @@ ha-utils/
 │           │   └── ha_utils_font_scale.yaml
 │           ├── packages/
 │           └── blueprints/
+│               └── automation/ha_utils/
 ├── tests/
 │   └── test_theme_pack.py
 ├── docs/
@@ -99,6 +109,7 @@ ha-utils/
 
 7. Reload themes or restart Home Assistant.
 8. Select a theme such as `HA Font 120%` from the theme selector.
+9. Open **Settings > Automations & scenes > Blueprints** to create automations from the HA Utils blueprints.
 
 If upgrading from the old test theme, delete `/config/themes/ha_utils_typography.yaml` and reload themes. That old theme used scale `1` and will not increase font size.
 

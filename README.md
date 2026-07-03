@@ -5,6 +5,7 @@ HACS custom integration that deploys reusable Home Assistant resources into your
 Current bundled resource:
 
 - `themes/ha_utils_font_scale.yaml` → copied to `/config/themes/ha_utils_font_scale.yaml`
+- `blueprints/automation/ha_utils/*.yaml` → copied to `/config/blueprints/automation/ha_utils/`
 
 The font-scale theme provides these selectable themes:
 
@@ -50,6 +51,19 @@ Restart Home Assistant once after adding this include. If the include already ex
 3. Choose one of the `HA Font ...` themes, for example `HA Font 120%`.
 
 This works in the web UI and Companion App because it uses Home Assistant's normal theme system.
+
+## Automation Blueprints
+
+The integration also deploys these automation blueprints:
+
+- `HA Utils - High wind alert`
+- `HA Utils - Hot day alert`
+- `HA Utils - Cold day alert`
+- `HA Utils - Possible thunderstorm alert`
+
+After install, find them in **Settings > Automations & scenes > Blueprints**.
+
+Each blueprint lets you choose the relevant sensor/weather entity, thresholds or conditions, cooldown, and the actions to run.
 
 ## Deploy Policy
 

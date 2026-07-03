@@ -19,6 +19,21 @@ THEME_FILE = (
     / "themes"
     / "ha_utils_font_scale.yaml"
 )
+BLUEPRINT_DIR = (
+    REPO
+    / "custom_components"
+    / "ha_utils"
+    / "bundled"
+    / "blueprints"
+    / "automation"
+    / "ha_utils"
+)
+BLUEPRINT_FILES = [
+    "cold_day.yaml",
+    "high_wind.yaml",
+    "hot_day.yaml",
+    "possible_thunderstorm.yaml",
+]
 
 
 def load_ha_utils_module(name: str):
@@ -79,6 +94,8 @@ def test_hacs_metadata_points_to_theme_file() -> None:
     assert "filename" not in hacs
     assert manifest.is_file()
     assert THEME_FILE.is_file()
+    for blueprint in BLUEPRINT_FILES:
+        assert (BLUEPRINT_DIR / blueprint).is_file()
 
 
 def test_manifest_has_hacs_required_keys() -> None:
@@ -99,7 +116,7 @@ def test_manifest_has_hacs_required_keys() -> None:
         assert key in manifest
 
 
-def test_bundled_theme_deploys_to_config_themes(tmp_path: Path) -> None:
+def test_bundled_resources_deploy_to_config(tmp_path: Path) -> None:
     deploy_bundled_assets = load_ha_utils_module("deploy").deploy_bundled_assets
 
     hass = types.SimpleNamespace(
@@ -108,8 +125,39 @@ def test_bundled_theme_deploys_to_config_themes(tmp_path: Path) -> None:
 
     result = deploy_bundled_assets(hass)
 
+    expected = [
+        f"blueprints/automation/ha_utils/{name}"
+        for name in BLUEPRINT_FILES
+    ] + ["themes/ha_utils_font_scale.yaml"]
+
     assert result.errors == []
-    assert result.copied == ["themes/ha_utils_font_scale.yaml"]
+    assert result.copied == expected
     assert (tmp_path / "themes" / "ha_utils_font_scale.yaml").read_text(
         encoding="utf-8"
     ) == THEME_FILE.read_text(encoding="utf-8")
+    for blueprint in BLUEPRINT_FILES:
+        assert (
+            tmp_path / "blueprints" / "automation" / "ha_utils" / blueprint
+        ).is_file()
+
+
+def test_deploy_copies_missing_files_without_overwriting(tmp_path: Path) -> None:
+    deploy_bundled_assets = load_ha_utils_module("deploy").deploy_bundled_assets
+    hass = types.SimpleNamespace(
+        config=types.SimpleNamespace(config_dir=str(tmp_path))
+    )
+
+    first = deploy_bundled_assets(hass)
+    second = deploy_bundled_assets(hass)
+
+    assert first.errors == []
+    assert second.copied == []
+    assert sorted(second.skipped) == sorted(first.copied)
+
+    missing = tmp_path / "blueprints" / "automation" / "ha_utils" / "hot_day.yaml"
+    missing.unlink()
+
+    third = deploy_bundled_assets(hass)
+
+    assert third.copied == ["blueprints/automation/ha_utils/hot_day.yaml"]
+    assert missing.is_file()
