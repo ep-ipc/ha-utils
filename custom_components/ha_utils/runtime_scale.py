@@ -1,4 +1,4 @@
-"""Runtime typography scale via frontend system storage (default theme support)."""
+"""Runtime font scale via frontend system storage."""
 
 from __future__ import annotations
 
@@ -13,39 +13,22 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def runtime_scale_payload(
-    *,
-    scale: float | int,
-    line_height: float | int,
-) -> dict[str, float | int]:
+def runtime_scale_payload(*, scale: float | int) -> dict[str, float]:
     """Build the value stored for the frontend module."""
-    return {"scale": scale, "line_height": line_height}
+    return {"scale": float(scale)}
 
 
-async def async_apply_runtime_scale(
+async def async_set_font_scale(
     hass: HomeAssistant,
     *,
     scale: float | int,
-    line_height: float | int,
-    dry_run: bool,
-) -> dict[str, Any] | None:
-    """Persist scale for all browsers; the frontend module applies CSS variables."""
-    payload = runtime_scale_payload(scale=scale, line_height=line_height)
-    if dry_run:
-        _LOGGER.info(
-            "Would apply runtime font scale (default theme): scale=%s line_height=%s",
-            scale,
-            line_height,
-        )
-        return payload
+) -> dict[str, Any]:
+    """Persist scale for all browsers; the frontend module applies the CSS variable."""
+    payload = runtime_scale_payload(scale=scale)
 
     from homeassistant.components.frontend.storage import async_system_store
 
     store = await async_system_store(hass)
     await store.async_set_item(SYSTEM_DATA_KEY, payload)
-    _LOGGER.info(
-        "Applied runtime font scale: scale=%s line_height=%s",
-        scale,
-        line_height,
-    )
+    _LOGGER.info("Set runtime font scale: scale=%s", scale)
     return payload

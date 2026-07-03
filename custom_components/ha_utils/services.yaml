@@ -1,14 +1,12 @@
-patch_themes:
-  name: Patch theme typography
+set_font_scale:
+  name: Set font scale
   description: >-
-    Apply scalable fonts everywhere. Sets --ha-font-size-scale on the default HA
-    theme via a frontend module (no themes/ folder required). When theme YAML
-    files exist, also rewrites them for Mushroom keys and card-mod dividers.
-    Creates a .bak backup per changed file unless dry_run.
+    Set the default Home Assistant theme font-size scale at runtime. Run from
+    Settings > Developer tools > Actions.
   fields:
     scale:
       name: Font scale
-      description: ha-font-size-scale multiplier (runtime + theme YAML when present).
+      description: Runtime multiplier for Home Assistant font-size tokens.
       required: false
       default: 1.0
       example: 1.2
@@ -18,41 +16,3 @@ patch_themes:
           max: 2.5
           step: 0.05
           mode: box
-    line_height:
-      name: Line height
-      description: ha-line-height-normal value written into themes.
-      required: false
-      default: 1.8
-      example: 1.8
-      selector:
-        number:
-          min: 1.0
-          max: 3.0
-          step: 0.1
-          mode: box
-    dry_run:
-      name: Dry run
-      description: Preview changes without writing files.
-      required: false
-      default: false
-      selector:
-        boolean:
-    themes_dir:
-      name: Themes path
-      description: >-
-        Optional folder or YAML file (relative to /config or absolute).
-        Leave empty to auto-detect from configuration.yaml frontend.themes.
-      required: false
-      example: themes
-      selector:
-        text:
-
-reload_themes:
-  name: Reload themes
-  description: Reload theme definitions from YAML (frontend.reload_themes).
-
-deploy_bundled:
-  name: Deploy bundled assets
-  description: >-
-    Copy missing package and blueprint files from the integration bundle into
-    your config directory (copy-if-missing only).

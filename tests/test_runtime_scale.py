@@ -8,5 +8,5 @@ runtime_scale_payload = runtime_scale.runtime_scale_payload
 
 
 def test_runtime_scale_payload() -> None:
-    payload = runtime_scale_payload(scale=1.2, line_height=1.8)
-    assert payload == {"scale": 1.2, "line_height": 1.8}
+    payload = runtime_scale_payload(scale=1.2)
+    assert payload == {"scale": 1.2}

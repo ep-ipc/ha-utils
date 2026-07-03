@@ -1,8 +1,4 @@
-.env
-
 __pycache__/
 *.py[cod]
 .pytest_cache/
-scripts/vendor/
-themes/
 .DS_Store

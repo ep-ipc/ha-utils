@@ -1,5 +1,5 @@
 /**
- * Runtime typography scaling for ha_utils.
+ * Runtime font scaling for ha_utils.
  * Loaded as an ES module via add_extra_js_url — sets --ha-font-size-scale
  * on <html> so HA's built-in calc()-based font tokens scale automatically.
  * Works with the default theme (no /config/themes needed).
@@ -11,9 +11,6 @@ function setProps(value) {
   const s = document.documentElement.style;
   if (value.scale != null) {
     s.setProperty("--ha-font-size-scale", String(value.scale));
-  }
-  if (value.line_height != null) {
-    s.setProperty("--ha-line-height-normal", String(value.line_height));
   }
 }
 
