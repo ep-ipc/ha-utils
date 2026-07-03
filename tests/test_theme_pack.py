@@ -75,9 +75,28 @@ def test_hacs_metadata_points_to_theme_file() -> None:
         REPO / "custom_components" / "ha_utils" / "manifest.json"
     )
     assert hacs["name"] == "Home Assistant Utils"
+    assert hacs["content_in_root"] is False
     assert "filename" not in hacs
     assert manifest.is_file()
     assert THEME_FILE.is_file()
+
+
+def test_manifest_has_hacs_required_keys() -> None:
+    manifest = json.loads(
+        (
+            REPO / "custom_components" / "ha_utils" / "manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert manifest["domain"] == "ha_utils"
+    for key in (
+        "codeowners",
+        "documentation",
+        "issue_tracker",
+        "name",
+        "version",
+    ):
+        assert key in manifest
 
 
 def test_bundled_theme_deploys_to_config_themes(tmp_path: Path) -> None:
