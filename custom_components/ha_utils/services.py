@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,7 +20,8 @@ from .const import (
     MIN_FONT_SCALE,
 )
 from .deploy import deploy_bundled_assets
-from .theme_patcher import patch_all_themes
+from .runtime_scale import async_apply_runtime_scale
+from .theme_runner import run_patch_themes
 
 if TYPE_CHECKING:
     from .deploy import DeployResult
@@ -41,6 +43,7 @@ PATCH_THEMES_SCHEMA = vol.Schema(
             vol.Range(min=1.0, max=3.0),
         ),
         vol.Optional("dry_run", default=False): cv.boolean,
+        vol.Optional("themes_dir"): cv.string,
     }
 )
 
@@ -59,13 +62,13 @@ def _log_patch_result(result: object, *, dry_run: bool) -> None:
         for path in result.would_change:
             _LOGGER.info("Would patch theme: %s", path)
         if not result.would_change and not result.errors:
-            _LOGGER.info("No theme files would change")
+            _LOGGER.info("No theme YAML files would change")
         return
 
     for path in result.changed:
         _LOGGER.info("Patched theme: %s", path)
     if not result.changed and not result.errors:
-        _LOGGER.info("All theme files already match target typography")
+        _LOGGER.info("No theme YAML files changed (runtime scale still applies)")
 
 
 @callback
@@ -73,18 +76,34 @@ def async_setup_services(hass: HomeAssistant) -> None:
     """Register HA Utils services."""
 
     async def handle_patch_themes(call: ServiceCall) -> None:
-        themes_dir = Path(hass.config.path("themes"))
+        config_dir = Path(hass.config.config_dir)
         scale = call.data["scale"]
         line_height = call.data["line_height"]
         dry_run = call.data["dry_run"]
+        themes_dir_override = call.data.get("themes_dir")
 
-        result = await hass.async_add_executor_job(
-            patch_all_themes,
-            themes_dir,
+        await async_apply_runtime_scale(
+            hass,
             scale=scale,
             line_height=line_height,
             dry_run=dry_run,
         )
+
+        result, sources = await hass.async_add_executor_job(
+            partial(
+                run_patch_themes,
+                config_dir,
+                scale=scale,
+                line_height=line_height,
+                dry_run=dry_run,
+                themes_dir_override=themes_dir_override,
+            ),
+        )
+        if sources:
+            _LOGGER.info(
+                "Theme sources: %s",
+                ", ".join(str(path) for path in sources),
+            )
         _log_patch_result(result, dry_run=dry_run)
 
     async def handle_reload_themes(call: ServiceCall) -> None:

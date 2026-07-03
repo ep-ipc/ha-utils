@@ -8,11 +8,9 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers import issue_registry as ir
 
-from .const import DOMAIN, ISSUE_PACKAGES_NOT_ENABLED, NAME
+from .const import DOMAIN, NAME
 from .deploy import deploy_bundled_assets
-from .prerequisites import check_prerequisites
 from .repairs import async_update_repairs
 
 
@@ -41,16 +39,6 @@ class HaUtilsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await async_update_repairs(
                     self.hass, deploy_result=deploy_result
                 )
-                status = check_prerequisites(self.hass)
-                if not status.packages_enabled:
-                    ir.async_create_issue(
-                        self.hass,
-                        DOMAIN,
-                        ISSUE_PACKAGES_NOT_ENABLED,
-                        is_fixable=False,
-                        severity=ir.IssueSeverity.ERROR,
-                        translation_key=ISSUE_PACKAGES_NOT_ENABLED,
-                    )
 
                 return self.async_create_entry(
                     title=NAME,

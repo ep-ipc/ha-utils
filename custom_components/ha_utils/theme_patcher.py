@@ -1,7 +1,6 @@
 """Apply global Home Assistant typography variables to theme YAML files.
 
-Ported from ha-helper ``scripts/scale_theme_fonts.py``. Besides
-``ha-font-size-scale`` and ``ha-line-height-normal``, the patcher:
+Besides ``ha-font-size-scale`` and ``ha-line-height-normal``, the patcher:
 
 - Rewrites fixed ``ha-font-size-*`` / ``title-font-size`` pixel overrides so
   they use ``calc(... * var(--ha-font-size-scale))``.
@@ -313,5 +312,85 @@ def patch_all_themes(
                 result.changed.append(rel)
         except OSError as err:
             result.errors.append(f"{rel}: {err}")
+
+    return result
+
+
+def _prefix_labels(prefix: str, paths: list[str]) -> list[str]:
+    if not prefix:
+        return paths
+    return [f"{prefix}/{path}" for path in paths]
+
+
+def _merge_results(target: PatchResult, source: PatchResult, *, prefix: str = "") -> None:
+    target.changed.extend(_prefix_labels(prefix, source.changed))
+    target.would_change.extend(_prefix_labels(prefix, source.would_change))
+    target.unchanged.extend(_prefix_labels(prefix, source.unchanged))
+    target.errors.extend(source.errors)
+
+
+def _patch_single_file(
+    path: Path,
+    *,
+    scale: float | int,
+    line_height: float | int,
+    dry_run: bool,
+) -> PatchResult:
+    """Patch one theme YAML file."""
+    result = PatchResult()
+    label = path.name
+    try:
+        original = path.read_text(encoding="utf-8")
+        updated = apply_typography_patches(
+            original, scale=scale, line_height=line_height
+        )
+        if updated == original:
+            result.unchanged.append(label)
+            return result
+        if dry_run:
+            result.would_change.append(label)
+            return result
+        if patch_theme_file(
+            path, scale=scale, line_height=line_height, dry_run=False
+        ):
+            result.changed.append(label)
+    except OSError as err:
+        result.errors.append(f"{label}: {err}")
+    return result
+
+
+def patch_theme_sources(
+    sources: list[Path],
+    *,
+    scale: float | int,
+    line_height: float | int = DEFAULT_LINE_HEIGHT,
+    dry_run: bool = False,
+) -> PatchResult:
+    """Patch theme YAML from discovered directories and/or single files."""
+    result = PatchResult()
+    if not sources:
+        return result
+
+    multi = len(sources) > 1
+    for source in sources:
+        prefix = source.name if multi else ""
+        if source.is_file():
+            sub = _patch_single_file(
+                source,
+                scale=scale,
+                line_height=line_height,
+                dry_run=dry_run,
+            )
+            _merge_results(result, sub, prefix=prefix)
+        elif source.is_dir():
+            sub = patch_all_themes(
+                source,
+                scale=scale,
+                line_height=line_height,
+                dry_run=dry_run,
+            )
+            _merge_results(result, sub, prefix=prefix or source.name)
+        else:
+            result.errors.append(f"Theme path does not exist: {source}")
 
     return result

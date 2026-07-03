@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 scripts/vendor/
 themes/
+.DS_Store

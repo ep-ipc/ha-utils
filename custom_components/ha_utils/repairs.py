@@ -28,7 +28,7 @@ async def async_update_repairs(
     deploy_result: DeployResult | None = None,
 ) -> None:
     """Create or clear repair issues based on current state."""
-    status = check_prerequisites(hass)
+    status = await hass.async_add_executor_job(check_prerequisites, hass)
     await _sync_repairs(hass, status, deploy_result)
 
 
