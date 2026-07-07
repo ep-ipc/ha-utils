@@ -12,12 +12,6 @@ User and contributor docs for the Home Assistant Utils integration.
 | [Scripts](scripts.md) | Bundled package scripts (expose-all to voice assistant) |
 | [Blueprints](blueprints.md) | Bundled automation blueprints (weather alerts) |
 
-## Planning
-
-| Doc | Description |
-|-----|-------------|
-| [Plan](plan.md) | Repository goals, tracker, and architecture notes |
-
 ## Naming
 
 Doc files use lowercase names (`install.md`, `themes.md`, …). Index files use `README.md`.

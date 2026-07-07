@@ -23,7 +23,7 @@ Home Assistant auto-discovers blueprints under `/config/blueprints/`. No extra `
 
 ### Weather alerts
 
-Location: `blueprints/automation/ha_utils/`
+Location: `bundled/blueprints/automation/ha_utils/` (deployed to `/config/blueprints/automation/ha_utils/`)
 
 Automation blueprints for weather-based alerts. Each uses a `weather` entity as the trigger source and lets you configure thresholds, hold duration, cooldown, and actions.
 

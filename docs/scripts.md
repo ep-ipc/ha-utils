@@ -58,7 +58,7 @@ data:
     - conversation
 ```
 
-That service is implemented in `voice.py` and uses Home Assistant's `async_expose_entity` API. Because `entity_ids` is omitted, all currently **unexposed** entities are exposed to Assist (`conversation`). Already-exposed entities are skipped.
+That service is implemented in `custom_components/ha_utils/voice.py` and uses Home Assistant's `async_expose_entity` API. Because `entity_ids` is omitted, all currently **unexposed** entities are exposed to Assist (`conversation`). Already-exposed entities are skipped.
 
 Unexpose individual entities later in **Settings → Voice assistants → Expose entities** if needed.
 
@@ -85,9 +85,9 @@ Home Assistant's action form does not support dynamic filtering of already-expos
 
 | Layer | Location | Role |
 |-------|----------|------|
-| Script | `bundled/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` | Triggers the service |
-| Service | `services.py` | Registers `ha_utils.expose_entities_to_voice_assistant` |
-| Logic | `voice.py` | Loops entities and calls `async_expose_entity` |
+| Script | `custom_components/ha_utils/bundled/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` | Triggers the service |
+| Service | `custom_components/ha_utils/services.py` | Registers `ha_utils.expose_entities_to_voice_assistant` |
+| Logic | `custom_components/ha_utils/voice.py` | Loops entities and calls `async_expose_entity` |
 
 ## Adding scripts
 

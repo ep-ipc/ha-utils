@@ -78,10 +78,10 @@ bundled/packages/     → /config/packages/
 Group project content so it does not clash with user files:
 
 ```
-blueprints/automation/ha_utils/     # blueprint namespace
-packages/ha_utils/                    # package sub-resources
-packages/ha_utils/scripts/            # scripts
-packages/ha_utils/automations/        # future
+bundled/blueprints/automation/ha_utils/   # blueprint namespace
+bundled/packages/ha_utils/                # package sub-resources
+bundled/packages/ha_utils/scripts/        # scripts
+bundled/packages/ha_utils/automations/    # future
 ```
 
 ### 3. One package entry file at `packages/` root

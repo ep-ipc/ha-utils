@@ -28,7 +28,3 @@ Bundled resources are **copy-if-missing** on setup. Run `ha_utils.deploy_bundled
 ```bash
 make test
 ```
-
-## Planning
-
-Repository goals and tracker: [docs/plan.md](docs/plan.md)
