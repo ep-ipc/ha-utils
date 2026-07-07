@@ -2,6 +2,8 @@ blueprint:
   name: HA Utils - Hot day alert
   description: >
     Run actions when a weather entity reports temperature above a configurable threshold.
+    Temperature uses the same unit as the weather entity (your Home Assistant unit system
+    in Settings → System → General, or the entity's configured unit).
     Use this for heat alerts, closing blinds, adjusting climate schedules, or
     notifying household members.
   domain: automation
@@ -15,8 +17,9 @@ blueprint:
           domain: weather
     temperature_threshold:
       name: High temperature threshold
-      description: Trigger when temperature rises above this value.
-      default: 90
+      description: >
+        Trigger when temperature rises above this value, in the same unit as the
+        weather entity's temperature (Settings → System → General, or the entity's unit).
       selector:
         number:
           min: -50

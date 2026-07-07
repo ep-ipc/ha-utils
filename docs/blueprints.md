@@ -37,7 +37,7 @@ Automation blueprints for weather-based alerts. Each uses a `weather` entity as 
 Configurable inputs:
 
 - **Weather entity** — must be a `weather` domain entity
-- **Threshold or conditions** — varies by blueprint
+- **Threshold or conditions** — varies by blueprint. For hot/cold day alerts, enter the temperature threshold in the same unit as the weather entity's temperature (your Home Assistant unit system in **Settings → System → General**, or the entity's configured unit). No default threshold is provided.
 - **Hold duration** — how long the condition must remain true
 - **Cooldown** — minimum time between automation runs
 - **Actions** — what to run when triggered
