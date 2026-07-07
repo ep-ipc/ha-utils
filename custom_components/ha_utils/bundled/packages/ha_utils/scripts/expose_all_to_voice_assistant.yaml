@@ -1,0 +1,12 @@
+ha_utils_expose_all_to_voice_assistant:
+  alias: HA Utils - Expose all to voice assistant
+  description: >-
+    Expose all currently unexposed entities to Assist. Home Assistant makes it
+    easy to unexpose individual entities later if needed.
+  icon: mdi:microphone
+  mode: single
+  sequence:
+    - action: ha_utils.expose_entities_to_voice_assistant
+      data:
+        assistants:
+          - conversation

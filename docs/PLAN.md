@@ -11,11 +11,14 @@ Build a HACS custom integration that installs into `/config/custom_components/ha
 Current bundled resource:
 
 - `custom_components/ha_utils/bundled/themes/ha_utils_font_scale.yaml`
+- `custom_components/ha_utils/bundled/packages/ha_utils.yaml`
 - `custom_components/ha_utils/bundled/blueprints/automation/ha_utils/*.yaml`
 
 Deployment result:
 
 - `/config/themes/ha_utils_font_scale.yaml`
+- `/config/packages/ha_utils.yaml`
+- `/config/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml`
 - `/config/blueprints/automation/ha_utils/*.yaml`
 
 Current bundled automation blueprints:
@@ -27,8 +30,8 @@ Current bundled automation blueprints:
 
 Future bundled resource types:
 
-- `/config/packages`
 - Additional `/config/themes`
+- Additional `/config/packages`
 
 ---
 
@@ -43,6 +46,7 @@ Future bundled resource types:
 | Manual `ha_utils.expose_entities_to_voice_assistant` action | Done |
 | Bundled font-scale theme | Done |
 | Bundled weather automation blueprints | Done |
+| Bundled expose-all voice assistant script | Done |
 | README/docs for integration install | Done |
 | Tests for theme/deploy layout | Done |
 
@@ -56,7 +60,7 @@ flowchart TB
     Restart["HA restart + add integration"] --> Setup["async_setup_entry"]
     Setup --> Deploy["deploy_bundled_assets"]
     Deploy --> Themes["/config/themes"]
-    Deploy --> Packages["/config/packages (future)"]
+    Deploy --> Packages["/config/packages"]
     Deploy --> Blueprints["/config/blueprints (future)"]
     DeployAction["ha_utils.deploy_bundled"] --> Deploy
     VoiceAction["ha_utils.expose_entities_to_voice_assistant"] --> Voice["Expose entities to voice assistants"]
@@ -153,7 +157,7 @@ All weather alert blueprints use a `weather` entity as the trigger source:
 
 ## Voice Exposure Notes
 
-`ha_utils.expose_entities_to_voice_assistant` is a Developer Tools action, not a bundled script.
+`ha_utils.expose_entities_to_voice_assistant` is available as a Developer Tools action and via the bundled script `script.ha_utils_expose_all_to_voice_assistant`.
 
 Behavior:
 

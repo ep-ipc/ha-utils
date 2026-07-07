@@ -1,0 +1,1 @@
+script: !include ha_utils/scripts/expose_all_to_voice_assistant.yaml

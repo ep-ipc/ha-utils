@@ -5,6 +5,8 @@ HACS custom integration that deploys reusable Home Assistant resources into your
 Current bundled resource:
 
 - `themes/ha_utils_font_scale.yaml` → copied to `/config/themes/ha_utils_font_scale.yaml`
+- `packages/ha_utils.yaml` → copied to `/config/packages/ha_utils.yaml`
+- `packages/ha_utils/scripts/*.yaml` → copied under `/config/packages/ha_utils/scripts/`
 - `blueprints/automation/ha_utils/*.yaml` → copied to `/config/blueprints/automation/ha_utils/`
 
 The font-scale theme provides these selectable themes:
@@ -44,6 +46,17 @@ frontend:
 
 Restart Home Assistant once after adding this include. If the include already exists, use **Developer tools > YAML > Reload themes** after installing/updating HA Utils.
 
+## Required HA Packages Config
+
+For Home Assistant to load the bundled script package, make sure `/config/configuration.yaml` contains:
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
+
+Restart Home Assistant once after adding this include. If the include already exists, use **Developer tools > YAML > Reload scripts** after the package file is copied.
+
 ## Use The Font Theme
 
 1. Reload themes or restart Home Assistant after the theme file is copied.
@@ -71,9 +84,19 @@ All weather alert blueprints use a `weather` entity as the trigger source:
 - Hot day and cold day use the weather entity's `temperature` attribute.
 - Possible thunderstorm uses the weather entity's state/condition.
 
-## Voice Assistant Exposure Action
+## Voice Assistant Exposure
 
-The integration registers this Developer Tools action:
+Home Assistant makes it easy to unexpose entities you do not want in Assist, but there is no built-in way to expose everything at once. HA Utils provides both a one-click script and a Developer Tools action.
+
+### Bundled script
+
+After install, run **Settings > Automations & scenes > Scripts > HA Utils - Expose all to voice assistant**.
+
+This calls `ha_utils.expose_entities_to_voice_assistant`, which is implemented in the integration (`voice.py`) and uses Home Assistant's `async_expose_entity` API. The script YAML only triggers that service; omitting `entity_ids` exposes all currently unexposed entities to Assist (`conversation`). Unexpose individual entities later in **Settings > Voice assistants > Expose entities** if needed.
+
+### Developer Tools action
+
+The integration also registers:
 
 - `ha_utils.expose_entities_to_voice_assistant`
 

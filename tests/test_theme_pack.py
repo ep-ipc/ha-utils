@@ -34,6 +34,24 @@ BLUEPRINT_FILES = [
     "hot_day.yaml",
     "possible_thunderstorm.yaml",
 ]
+PACKAGE_FILE = (
+    REPO
+    / "custom_components"
+    / "ha_utils"
+    / "bundled"
+    / "packages"
+    / "ha_utils.yaml"
+)
+EXPOSE_ALL_SCRIPT_FILE = (
+    REPO
+    / "custom_components"
+    / "ha_utils"
+    / "bundled"
+    / "packages"
+    / "ha_utils"
+    / "scripts"
+    / "expose_all_to_voice_assistant.yaml"
+)
 
 
 def load_ha_utils_module(name: str):
@@ -96,6 +114,8 @@ def test_hacs_metadata_points_to_theme_file() -> None:
     assert THEME_FILE.is_file()
     for blueprint in BLUEPRINT_FILES:
         assert (BLUEPRINT_DIR / blueprint).is_file()
+    assert PACKAGE_FILE.is_file()
+    assert EXPOSE_ALL_SCRIPT_FILE.is_file()
 
 
 def test_weather_blueprints_use_weather_entities_for_triggers() -> None:
@@ -146,10 +166,14 @@ def test_bundled_resources_deploy_to_config(tmp_path: Path) -> None:
     expected = [
         f"blueprints/automation/ha_utils/{name}"
         for name in BLUEPRINT_FILES
-    ] + ["themes/ha_utils_font_scale.yaml"]
+    ] + [
+        "packages/ha_utils.yaml",
+        "packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml",
+        "themes/ha_utils_font_scale.yaml",
+    ]
 
     assert result.errors == []
-    assert result.copied == expected
+    assert sorted(result.copied) == sorted(expected)
     assert (tmp_path / "themes" / "ha_utils_font_scale.yaml").read_text(
         encoding="utf-8"
     ) == THEME_FILE.read_text(encoding="utf-8")
@@ -210,6 +234,16 @@ def test_deploy_can_overwrite_existing_files_with_backup(tmp_path: Path) -> None
     assert stale_blueprint.with_name("hot_day.yaml.bak").read_text(
         encoding="utf-8"
     ) == "user edited old blueprint\n"
+
+
+def test_bundled_package_exposes_all_entities_via_script() -> None:
+    package = PACKAGE_FILE.read_text(encoding="utf-8")
+    script = EXPOSE_ALL_SCRIPT_FILE.read_text(encoding="utf-8")
+
+    assert "script: !include ha_utils/scripts/expose_all_to_voice_assistant.yaml" in package
+    assert "ha_utils_expose_all_to_voice_assistant:" in script
+    assert "action: ha_utils.expose_entities_to_voice_assistant" in script
+    assert "conversation" in script
 
 
 def test_voice_helper_targets_selected_or_all_entities() -> None:
