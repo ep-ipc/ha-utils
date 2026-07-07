@@ -1,146 +1,34 @@
 # Home Assistant Utils
 
-HACS custom integration that deploys reusable Home Assistant resources into your `/config` directory.
+HACS custom integration that deploys reusable Home Assistant resources into your `/config` directory — themes, packages, blueprints, and integration services.
 
-Current bundled resource:
+## Features
 
-- `themes/ha_utils_font_scale.yaml` → copied to `/config/themes/ha_utils_font_scale.yaml`
-- `packages/ha_utils.yaml` → copied to `/config/packages/ha_utils.yaml`
-- `packages/ha_utils/scripts/*.yaml` → copied under `/config/packages/ha_utils/scripts/`
-- `blueprints/automation/ha_utils/*.yaml` → copied to `/config/blueprints/automation/ha_utils/`
+| Feature | Summary |
+|---------|---------|
+| [Install](docs/install.md) | HACS setup, integration install, required `configuration.yaml` includes |
+| [Deploy](docs/deploy.md) | How bundled files map to `/config`, copy policy, and upgrade workflow |
+| [Themes](docs/themes.md) | Bundled themes (font scale pack) |
+| [Scripts](docs/scripts.md) | Bundled package scripts (expose-all to voice assistant) |
+| [Blueprints](docs/blueprints.md) | Bundled automation blueprints (weather alerts) |
 
-The font-scale theme provides these selectable themes:
+Full doc index: [docs/README.md](docs/README.md)
 
-- `HA Font 100%`
-- `HA Font 110%`
-- `HA Font 115%`
-- `HA Font 120%`
-- `HA Font 125%`
-- `HA Font 130%`
-- `HA Font 140%`
-- `HA Font 150%`
+## Quick start
 
-Each theme only sets `ha-font-size-scale` in both light and dark modes, so Home Assistant uses the default light/dark bases and still shows the Auto/Light/Dark selector.
+1. Install in HACS as type **Integration**.
+2. Restart Home Assistant and add **Home Assistant Utils** under **Settings → Devices & services**.
+3. Add required includes to `configuration.yaml` — see [Install](docs/install.md).
+4. Use deployed resources from the theme selector, Blueprints, or Scripts UI.
 
-## Install
+Bundled resources are **copy-if-missing** on setup. Run `ha_utils.deploy_bundled` to copy missing files or refresh after upgrades — see [Deploy](docs/deploy.md).
 
-Install this repository in HACS as a custom repository of type **Integration**.
-
-After HACS downloads the integration:
-
-1. Restart Home Assistant.
-2. Go to **Settings > Devices & services > Add integration**.
-3. Add **Home Assistant Utils**.
-4. The integration copies bundled resources into `/config` using copy-if-missing.
-
-If HACS says it will install to `/config/custom_components/ha_utils`, that is expected for this project. The integration then copies bundled resources to their real destinations, such as `/config/themes`, when Home Assistant sets it up.
-
-## Required HA Theme Config
-
-For Home Assistant to load copied theme files, make sure `/config/configuration.yaml` contains:
-
-```yaml
-frontend:
-  themes: !include_dir_merge_named themes
-```
-
-Restart Home Assistant once after adding this include. If the include already exists, use **Developer tools > YAML > Reload themes** after installing/updating HA Utils.
-
-## Required HA Packages Config
-
-For Home Assistant to load the bundled script package, make sure `/config/configuration.yaml` contains:
-
-```yaml
-homeassistant:
-  packages: !include_dir_named packages
-```
-
-Restart Home Assistant once after adding this include. If the include already exists, use **Developer tools > YAML > Reload scripts** after the package file is copied.
-
-## Use The Font Theme
-
-1. Reload themes or restart Home Assistant after the theme file is copied.
-2. Open your profile/theme selector.
-3. Choose one of the `HA Font ...` themes, for example `HA Font 120%`.
-
-This works in the web UI and Companion App because it uses Home Assistant's normal theme system.
-
-## Automation Blueprints
-
-The integration also deploys these automation blueprints:
-
-- `HA Utils - High wind alert`
-- `HA Utils - Hot day alert`
-- `HA Utils - Cold day alert`
-- `HA Utils - Possible thunderstorm alert`
-
-After install, find them in **Settings > Automations & scenes > Blueprints**.
-
-Each blueprint lets you choose the relevant weather entity, thresholds or conditions, cooldown, and the actions to run.
-
-All weather alert blueprints use a `weather` entity as the trigger source:
-
-- High wind uses the weather entity's `wind_speed` attribute.
-- Hot day and cold day use the weather entity's `temperature` attribute.
-- Possible thunderstorm uses the weather entity's state/condition.
-
-## Voice Assistant Exposure
-
-Home Assistant makes it easy to unexpose entities you do not want in Assist, but there is no built-in way to expose everything at once. HA Utils provides both a one-click script and a Developer Tools action.
-
-### Bundled script
-
-After install, run **Settings > Automations & scenes > Scripts > HA Utils - Expose all to voice assistant**.
-
-This calls `ha_utils.expose_entities_to_voice_assistant`, which is implemented in the integration (`voice.py`) and uses Home Assistant's `async_expose_entity` API. The script YAML only triggers that service; omitting `entity_ids` exposes all currently unexposed entities to Assist (`conversation`). Unexpose individual entities later in **Settings > Voice assistants > Expose entities** if needed.
-
-### Developer Tools action
-
-The integration also registers:
-
-- `ha_utils.expose_entities_to_voice_assistant`
-
-Fields:
-
-- `Entities`: optional multi-entity selector. Leave empty to expose all entities that are not already exposed.
-- `Voice assistants`: Assist by default (`conversation`), with optional Alexa and Google Assistant if available.
-
-Run it from **Settings > Developer tools > Actions**.
-
-Home Assistant's action form does not support dynamic filtering of already exposed entities, nor select-all/unselect-all buttons for custom service fields. The action handles this server-side by skipping entities that are already exposed.
-
-## Deploy Policy
-
-Bundled resources are **copy-if-missing by default**. Existing files in `/config` are skipped during normal startup/setup.
-
-Run **Developer tools > Actions > `ha_utils.deploy_bundled`** to copy any bundled files that are missing.
-
-To update already deployed blueprints after upgrading HA Utils:
-
-1. Open **Settings > Developer tools > Actions**.
-2. Run `ha_utils.deploy_bundled`.
-3. Set `overwrite_existing: true`.
-4. Keep `backup_existing: true` unless you intentionally do not want `.bak` files.
-
-This refreshes existing bundled resources from the integration and writes backups such as `hot_day.yaml.bak` first.
-
-## Planned Resource Types
-
-This integration is intended to grow into a small HA utility package. Future bundled resources can be added under:
-
-- `custom_components/ha_utils/bundled/themes/`
-- `custom_components/ha_utils/bundled/packages/`
-- `custom_components/ha_utils/bundled/blueprints/`
-
-The deployer mirrors that folder structure into `/config`.
-
-## Notes
-
-- Home Assistant's primary/accent color pickers are special to the built-in `Home Assistant` theme. Custom themes can define colors in YAML, but they cannot keep those color picker controls.
-- If you previously tested `ha_utils_typography`, delete `/config/themes/ha_utils_typography.yaml`; it used scale `1` and will not increase font size.
-
-## Local Development
+## Local development
 
 ```bash
 make test
 ```
+
+## Planning
+
+Repository goals and tracker: [docs/plan.md](docs/plan.md)
