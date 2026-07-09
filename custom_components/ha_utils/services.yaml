@@ -11,7 +11,7 @@ deploy_bundled:
         Replace existing bundled resources with the integration's current
         versions. Use this to update previously deployed blueprints.
       required: false
-      default: false
+      default: true
       selector:
         boolean:
     backup_existing:

@@ -36,7 +36,7 @@ def _bundled_root() -> Path:
 def deploy_bundled_assets(
     hass: HomeAssistant,
     *,
-    overwrite_existing: bool = False,
+    overwrite_existing: bool = True,
     backup_existing: bool = True,
 ) -> DeployResult:
     """Copy bundled files into the HA config directory.

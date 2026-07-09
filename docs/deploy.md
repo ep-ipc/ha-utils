@@ -33,8 +33,8 @@ There is no per-resource deploy logic. Every file under `bundled/` is walked rec
 | Situation | Result |
 |-----------|--------|
 | Destination file missing | Copy → logged as `copied` |
-| Destination exists, `overwrite_existing: false` | Skip → logged as `skipped` |
-| Destination exists, `overwrite_existing: true`, content differs | Optional `.bak` backup, then replace → logged as `updated` |
+| Destination exists, `overwrite_existing: true` (default), content differs | Optional `.bak` backup, then replace → logged as `updated` |
+| Destination exists, `overwrite_existing: false` | Keep existing file → logged as `skipped` |
 | Source and destination identical | Skip even when overwrite is enabled |
 
 After each run, a marker file is written to `/config/.ha_utils_deployed` with version, timestamp, and deploy results.
@@ -47,7 +47,7 @@ Fields:
 
 | Field | Default | Purpose |
 |-------|---------|---------|
-| `overwrite_existing` | `false` | Replace existing deployed files with bundled versions |
+| `overwrite_existing` | `true` | Replace existing deployed files with bundled versions |
 | `backup_existing` | `true` | Write `.bak` files before overwriting |
 
 ### Upgrade workflow
@@ -56,7 +56,7 @@ After upgrading HA Utils in HACS:
 
 1. Open **Settings → Developer tools → Actions**.
 2. Run `ha_utils.deploy_bundled`.
-3. Set `overwrite_existing: true`.
+3. Keep `overwrite_existing: true` (default).
 4. Keep `backup_existing: true` unless you do not want `.bak` files.
 
 This refreshes blueprints and other bundled files that were skipped on first install.
@@ -127,7 +127,7 @@ bundled/
 
 - Deploy does **not** edit `configuration.yaml`. You must add theme and package includes yourself.
 - Deploy does **not** delete removed bundled files from `/config`. Delete stale files manually if needed.
-- Existing files are **not** updated on upgrade unless you run deploy with `overwrite_existing: true`.
+- Existing files are updated on deploy by default. Set `overwrite_existing: false` if you want a copy-if-missing run.
 
 ## Adding a new bundled script
 

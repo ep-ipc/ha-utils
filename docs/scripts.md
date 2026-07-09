@@ -4,6 +4,31 @@ HA Utils deploys ready-to-run scripts through Home Assistant packages. Script de
 
 See [Deploy](deploy.md) for the copy rules and package conventions.
 
+## What this includes
+
+### Expose all to voice assistant
+
+**Settings → Automations & scenes → Scripts → HA Utils - Expose all to voice assistant**
+
+Entity: `script.ha_utils_expose_all_to_voice_assistant`
+
+File: `expose_all_to_voice_assistant.yaml`
+
+Home Assistant makes it easy to unexpose entities you do not want in Assist, but there is no built-in way to expose everything at once. This script exposes all currently unexposed entities to Assist.
+
+The script YAML does not contain exposure logic. It calls the integration service:
+
+```yaml
+action: ha_utils.expose_entities_to_voice_assistant
+data:
+  assistants:
+    - conversation
+```
+
+That service is implemented in `custom_components/ha_utils/voice.py` and uses Home Assistant's `async_expose_entity` API. Because `entity_ids` is omitted, all currently **unexposed** entities are exposed to Assist (`conversation`). Already-exposed entities are skipped.
+
+Unexpose individual entities later in **Settings → Voice assistants → Expose entities** if needed.
+
 ## Deployed location
 
 ```
@@ -36,31 +61,6 @@ homeassistant:
 Restart Home Assistant once after adding this include. If it already exists, use **Developer tools → YAML → Reload scripts** after package files are copied.
 
 See [Install](install.md).
-
-## Bundled scripts
-
-### Expose all to voice assistant
-
-**Settings → Automations & scenes → Scripts → HA Utils - Expose all to voice assistant**
-
-Entity: `script.ha_utils_expose_all_to_voice_assistant`
-
-File: `expose_all_to_voice_assistant.yaml`
-
-Home Assistant makes it easy to unexpose entities you do not want in Assist, but there is no built-in way to expose everything at once. This script exposes all currently unexposed entities to Assist.
-
-The script YAML does not contain exposure logic. It calls the integration service:
-
-```yaml
-action: ha_utils.expose_entities_to_voice_assistant
-data:
-  assistants:
-    - conversation
-```
-
-That service is implemented in `custom_components/ha_utils/voice.py` and uses Home Assistant's `async_expose_entity` API. Because `entity_ids` is omitted, all currently **unexposed** entities are exposed to Assist (`conversation`). Already-exposed entities are skipped.
-
-Unexpose individual entities later in **Settings → Voice assistants → Expose entities** if needed.
 
 ## Related integration action
 

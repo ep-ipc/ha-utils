@@ -2,24 +2,7 @@
 
 HA Utils deploys automation blueprints from `bundled/blueprints/` to `/config/blueprints/`. See [Deploy](deploy.md) for the copy rules and folder conventions.
 
-## Deployed location
-
-```
-/config/blueprints/
-```
-
-Bundled source: `custom_components/ha_utils/bundled/blueprints/`
-
-Home Assistant auto-discovers blueprints under `/config/blueprints/`. No extra `configuration.yaml` include is required.
-
-## How to use
-
-1. Install HA Utils and confirm blueprints are deployed — see [Deploy](deploy.md).
-2. Open **Settings → Automations & scenes → Blueprints**.
-3. Create an automation from an HA Utils blueprint.
-4. Configure inputs and actions.
-
-## Bundled blueprints
+## What this includes
 
 ### Weather alerts
 
@@ -42,9 +25,26 @@ Configurable inputs:
 - **Cooldown** — minimum time between automation runs
 - **Actions** — what to run when triggered
 
+## Deployed location
+
+```
+/config/blueprints/
+```
+
+Bundled source: `custom_components/ha_utils/bundled/blueprints/`
+
+Home Assistant auto-discovers blueprints under `/config/blueprints/`. No extra `configuration.yaml` include is required.
+
+## How to use
+
+1. Install HA Utils and confirm blueprints are deployed — see [Deploy](deploy.md).
+2. Open **Settings → Automations & scenes → Blueprints**.
+3. Create an automation from an HA Utils blueprint.
+4. Configure inputs and actions.
+
 ## Upgrading blueprints
 
-Bundled blueprints are copy-if-missing by default. After upgrading HA Utils, run `ha_utils.deploy_bundled` with `overwrite_existing: true` to refresh them. See [Deploy](deploy.md).
+Bundled blueprints are refreshed by default when deploy runs (`overwrite_existing: true`). Set `overwrite_existing: false` if you want copy-if-missing behavior. See [Deploy](deploy.md).
 
 ## Adding blueprints
 

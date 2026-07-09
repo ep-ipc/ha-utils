@@ -25,7 +25,7 @@ SERVICE_EXPOSE_ENTITIES = "expose_entities_to_voice_assistant"
 
 DEPLOY_BUNDLED_SCHEMA = vol.Schema(
     {
-        vol.Optional("overwrite_existing", default=False): cv.boolean,
+        vol.Optional("overwrite_existing", default=True): cv.boolean,
         vol.Optional("backup_existing", default=True): cv.boolean,
     }
 )
