@@ -45,7 +45,7 @@ Required for bundled [scripts](scripts.md).
 | Resource | Where to find it |
 |----------|------------------|
 | Font themes | Profile / theme selector |
-| Weather blueprints | **Settings → Automations & scenes → Blueprints** |
+| Weather / control-all blueprints | **Settings → Automations & scenes → Blueprints** |
 | Expose-all script | **Settings → Automations & scenes → Scripts** |
 | Deploy action | **Settings → Developer tools → Actions → `ha_utils.deploy_bundled`** |
 | Voice exposure action | **Settings → Developer tools → Actions → `ha_utils.expose_entities_to_voice_assistant`** |

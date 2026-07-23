@@ -78,7 +78,8 @@ bundled/packages/     → /config/packages/
 Group project content so it does not clash with user files:
 
 ```
-bundled/blueprints/automation/ha_utils/   # blueprint namespace
+bundled/blueprints/automation/ha_utils/   # automation blueprint namespace
+bundled/blueprints/script/ha_utils/       # script blueprint namespace
 bundled/packages/ha_utils/                # package sub-resources
 bundled/packages/ha_utils/scripts/        # scripts
 bundled/packages/ha_utils/automations/    # future
@@ -111,11 +112,13 @@ bundled/
 ├── themes/
 │   └── ha_utils_font_scale.yaml
 ├── blueprints/
-│   └── automation/ha_utils/
-│       ├── cold_day.yaml
-│       ├── high_wind.yaml
-│       ├── hot_day.yaml
-│       └── possible_thunderstorm.yaml
+│   ├── automation/ha_utils/
+│   │   ├── cold_day.yaml
+│   │   ├── high_wind.yaml
+│   │   ├── hot_day.yaml
+│   │   └── possible_thunderstorm.yaml
+│   └── script/ha_utils/
+│       └── control_all_by_domain.yaml
 └── packages/
     ├── ha_utils.yaml
     └── ha_utils/

@@ -19,7 +19,7 @@ THEME_FILE = (
     / "themes"
     / "ha_utils_font_scale.yaml"
 )
-BLUEPRINT_DIR = (
+AUTOMATION_BLUEPRINT_DIR = (
     REPO
     / "custom_components"
     / "ha_utils"
@@ -28,11 +28,23 @@ BLUEPRINT_DIR = (
     / "automation"
     / "ha_utils"
 )
-BLUEPRINT_FILES = [
+AUTOMATION_BLUEPRINT_FILES = [
     "cold_day.yaml",
     "high_wind.yaml",
     "hot_day.yaml",
     "possible_thunderstorm.yaml",
+]
+SCRIPT_BLUEPRINT_DIR = (
+    REPO
+    / "custom_components"
+    / "ha_utils"
+    / "bundled"
+    / "blueprints"
+    / "script"
+    / "ha_utils"
+)
+SCRIPT_BLUEPRINT_FILES = [
+    "control_all_by_domain.yaml",
 ]
 PACKAGE_FILE = (
     REPO
@@ -112,28 +124,46 @@ def test_hacs_metadata_points_to_theme_file() -> None:
     assert "filename" not in hacs
     assert manifest.is_file()
     assert THEME_FILE.is_file()
-    for blueprint in BLUEPRINT_FILES:
-        assert (BLUEPRINT_DIR / blueprint).is_file()
+    for blueprint in AUTOMATION_BLUEPRINT_FILES:
+        assert (AUTOMATION_BLUEPRINT_DIR / blueprint).is_file()
+    for blueprint in SCRIPT_BLUEPRINT_FILES:
+        assert (SCRIPT_BLUEPRINT_DIR / blueprint).is_file()
     assert PACKAGE_FILE.is_file()
     assert EXPOSE_ALL_SCRIPT_FILE.is_file()
 
 
 def test_weather_blueprints_use_weather_entities_for_triggers() -> None:
-    for blueprint in BLUEPRINT_FILES:
-        text = (BLUEPRINT_DIR / blueprint).read_text(encoding="utf-8")
+    for blueprint in AUTOMATION_BLUEPRINT_FILES:
+        text = (AUTOMATION_BLUEPRINT_DIR / blueprint).read_text(encoding="utf-8")
         assert "domain: weather" in text
         assert "entity_id: !input weather_entity" in text
         assert "domain: sensor" not in text
 
-    assert "attribute: wind_speed" in (BLUEPRINT_DIR / "high_wind.yaml").read_text(
-        encoding="utf-8"
-    )
-    assert "attribute: temperature" in (BLUEPRINT_DIR / "hot_day.yaml").read_text(
-        encoding="utf-8"
-    )
-    assert "attribute: temperature" in (BLUEPRINT_DIR / "cold_day.yaml").read_text(
-        encoding="utf-8"
-    )
+    assert "attribute: wind_speed" in (
+        AUTOMATION_BLUEPRINT_DIR / "high_wind.yaml"
+    ).read_text(encoding="utf-8")
+    assert "attribute: temperature" in (
+        AUTOMATION_BLUEPRINT_DIR / "hot_day.yaml"
+    ).read_text(encoding="utf-8")
+    assert "attribute: temperature" in (
+        AUTOMATION_BLUEPRINT_DIR / "cold_day.yaml"
+    ).read_text(encoding="utf-8")
+
+
+def test_control_all_by_domain_script_blueprint() -> None:
+    text = (
+        SCRIPT_BLUEPRINT_DIR / "control_all_by_domain.yaml"
+    ).read_text(encoding="utf-8")
+
+    assert "domain: script" in text
+    assert "device_domain:" in text
+    assert "exclude_entities:" in text
+    assert "homeassistant.turn_on" in text
+    assert "homeassistant.turn_off" in text
+    assert "selectattr('domain', 'eq', device_domain)" in text
+    assert "reject('in', exclude)" in text
+    for domain in ("light", "fan", "switch", "media_player"):
+        assert f"value: {domain}" in text
 
 
 def test_manifest_has_hacs_required_keys() -> None:
@@ -165,7 +195,10 @@ def test_bundled_resources_deploy_to_config(tmp_path: Path) -> None:
 
     expected = [
         f"blueprints/automation/ha_utils/{name}"
-        for name in BLUEPRINT_FILES
+        for name in AUTOMATION_BLUEPRINT_FILES
+    ] + [
+        f"blueprints/script/ha_utils/{name}"
+        for name in SCRIPT_BLUEPRINT_FILES
     ] + [
         "packages/ha_utils.yaml",
         "packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml",
@@ -177,9 +210,13 @@ def test_bundled_resources_deploy_to_config(tmp_path: Path) -> None:
     assert (tmp_path / "themes" / "ha_utils_font_scale.yaml").read_text(
         encoding="utf-8"
     ) == THEME_FILE.read_text(encoding="utf-8")
-    for blueprint in BLUEPRINT_FILES:
+    for blueprint in AUTOMATION_BLUEPRINT_FILES:
         assert (
             tmp_path / "blueprints" / "automation" / "ha_utils" / blueprint
+        ).is_file()
+    for blueprint in SCRIPT_BLUEPRINT_FILES:
+        assert (
+            tmp_path / "blueprints" / "script" / "ha_utils" / blueprint
         ).is_file()
 
 
@@ -229,7 +266,7 @@ def test_deploy_can_overwrite_existing_files_with_backup(tmp_path: Path) -> None
         "blueprints/automation/ha_utils/hot_day.yaml.bak"
     ]
     assert stale_blueprint.read_text(encoding="utf-8") == (
-        BLUEPRINT_DIR / "hot_day.yaml"
+        AUTOMATION_BLUEPRINT_DIR / "hot_day.yaml"
     ).read_text(encoding="utf-8")
     assert stale_blueprint.with_name("hot_day.yaml.bak").read_text(
         encoding="utf-8"

@@ -1,0 +1,90 @@
+blueprint:
+  name: HA Utils - Control all by device type
+  description: >
+    Turn on or off every entity of a chosen device type (domain), with optional
+    exceptions. Leave exceptions empty to control all entities of that type —
+    for example all lights, or all fans.
+  domain: script
+  source_url: https://github.com/ep-ipc/ha-utils
+  input:
+    device_domain:
+      name: Device type
+      description: >
+        Which kind of entities to control. Light controls only lights, fan only
+        fans, and so on.
+      default: light
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: Light
+              value: light
+            - label: Fan
+              value: fan
+            - label: Switch
+              value: switch
+            - label: Media player
+              value: media_player
+            - label: Cover
+              value: cover
+            - label: Humidifier
+              value: humidifier
+            - label: Siren
+              value: siren
+            - label: Input boolean
+              value: input_boolean
+    control_action:
+      name: Action
+      description: Whether to turn the matching entities on or off.
+      default: turn_off
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: Turn off
+              value: turn_off
+            - label: Turn on
+              value: turn_on
+    exclude_entities:
+      name: Exceptions
+      description: >
+        Entities to skip. Leave empty to control every entity of the selected
+        device type.
+      default: []
+      selector:
+        entity:
+          multiple: true
+
+mode: single
+
+variables:
+  device_domain: !input device_domain
+  control_action: !input control_action
+  exclude_entities: !input exclude_entities
+
+sequence:
+  - variables:
+      target_entities: >
+        {% set exclude = exclude_entities if exclude_entities is list else ([exclude_entities] if exclude_entities else []) %}
+        {{ states
+           | selectattr('domain', 'eq', device_domain)
+           | map(attribute='entity_id')
+           | reject('in', exclude)
+           | list }}
+  - condition: template
+    value_template: "{{ target_entities | count > 0 }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ control_action == 'turn_on' }}"
+        sequence:
+          - action: homeassistant.turn_on
+            target:
+              entity_id: "{{ target_entities }}"
+      - conditions:
+          - condition: template
+            value_template: "{{ control_action == 'turn_off' }}"
+        sequence:
+          - action: homeassistant.turn_off
+            target:
+              entity_id: "{{ target_entities }}"
