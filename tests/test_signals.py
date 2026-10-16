@@ -153,6 +153,31 @@ def test_bad_weather_turns_on_for_station_rain_or_forecast() -> None:
     assert active is True
 
 
+def test_bad_weather_reason_names_the_forecast_hour() -> None:
+    text = logic.describe_bad_weather(
+        is_on=True,
+        local_bad=False,
+        station_configured=True,
+        station_fresh=True,
+        forecast_condition="sunny",
+        forecast_hits=["rainy at 4:00 PM", "rainy at 5:00 PM"],
+    )
+    assert text == (
+        "On because the forecast is rainy at 4:00 PM, rainy at 5:00 PM. "
+        "The station is dry."
+    )
+
+    off = logic.describe_bad_weather(
+        is_on=False,
+        local_bad=False,
+        station_configured=True,
+        station_fresh=True,
+        forecast_condition="sunny",
+        forecast_hits=[],
+    )
+    assert off == "Off. The station is dry. The forecast is sunny."
+
+
 def test_state_round_trip() -> None:
     item = engine()
     item.observe_gust(START, 12.0)

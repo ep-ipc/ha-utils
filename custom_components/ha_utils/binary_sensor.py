@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.components.logbook import async_log_entry
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -68,7 +69,21 @@ class ThresholdBinarySensor(BinarySensorEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+        self._logged_reason: str | None = None
+
+        @callback
+        def _update() -> None:
+            self.async_write_ha_state()
+            if self._key != "active":
+                return
+            reason = self.runtime.reason
+            if not reason or reason == self._logged_reason:
+                return
+            self._logged_reason = reason
+            async_log_entry(self.hass, "Bad weather", reason, DOMAIN, self.entity_id)
+
+        self.async_on_remove(self.runtime.listen(_update))
+        _update()
 
     @property
     def is_on(self) -> bool:
@@ -95,6 +110,7 @@ class ThresholdBinarySensor(BinarySensorEntity):
             "forecast_bad": self.runtime.forecast_bad,
             "station_fresh": self.runtime.station_fresh,
             "conditions": self.runtime.data.get("storm_conditions"),
+            "reason": self.runtime.reason,
         }
 
     def data_value(self, key: str):

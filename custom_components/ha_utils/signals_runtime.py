@@ -18,7 +18,13 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .logic import WindEngine, WindOptions, merge_bad_weather, merge_temperature
+from .logic import (
+    WindEngine,
+    WindOptions,
+    describe_bad_weather,
+    merge_bad_weather,
+    merge_temperature,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -261,9 +267,11 @@ class ThresholdRuntime(SignalRuntime):
         self.hot = False
         self.cold = False
         self.is_on = False
+        self.reason = ""
         self._forecast_high: float | None = None
         self._forecast_low: float | None = None
         self._forecast_conditions: list[str] = []
+        self._forecast_hits: list[str] = []
 
     def async_start(self) -> Any:
         self.hass.async_create_task(self._async_start())
@@ -342,6 +350,14 @@ class ThresholdRuntime(SignalRuntime):
             self.temperature = None
             self.hot = False
             self.cold = False
+            self.reason = describe_bad_weather(
+                is_on=self.is_on,
+                local_bad=self.local_bad,
+                station_configured=isinstance(station_id, str) and bool(station_id),
+                station_fresh=self.station_fresh,
+                forecast_condition=forecast_condition,
+                forecast_hits=self._forecast_hits,
+            )
         self._notify()
 
     async def _async_poll_forecast(self, _now: datetime | None = None) -> None:
@@ -353,12 +369,17 @@ class ThresholdRuntime(SignalRuntime):
             self._forecast_high = None
             self._forecast_low = None
             self._forecast_conditions = []
+            self._forecast_hits = []
             self._refresh(now)
             return
         raw_temp = state.attributes.get("temperature")
         current = float(raw_temp) if isinstance(raw_temp, (int, float)) else None
         hourly_temps: list[float] = []
         hourly_conditions: list[str] = []
+        hits: list[str] = []
+        conditions = self._conditions()
+        if state.state in conditions:
+            hits.append(f"{state.state} now")
         try:
             response = await self.hass.services.async_call(
                 "weather",
@@ -384,12 +405,16 @@ class ThresholdRuntime(SignalRuntime):
             condition = row.get("condition")
             if isinstance(condition, str):
                 hourly_conditions.append(condition)
+                if condition in conditions and stamp is not None:
+                    label = dt_util.as_local(stamp).strftime("%I:%M %p").lstrip("0")
+                    hits.append(f"{condition} at {label}")
         temps = [current] if current is not None else []
         temps.extend(hourly_temps)
         self.forecast_temperature = current
         self._forecast_high = max(temps) if temps else None
         self._forecast_low = min(temps) if temps else None
         self._forecast_conditions = hourly_conditions
+        self._forecast_hits = hits
         self._refresh(now)
 
 

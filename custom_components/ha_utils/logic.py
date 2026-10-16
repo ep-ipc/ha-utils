@@ -296,6 +296,49 @@ def merge_temperature(
     return TemperatureMerge(temperature, hot, cold)
 
 
+def describe_bad_weather(
+    *,
+    is_on: bool,
+    local_bad: bool,
+    station_configured: bool,
+    station_fresh: bool,
+    forecast_condition: str | None,
+    forecast_hits: list[str],
+) -> str:
+    """One sentence a person can read in the activity log."""
+
+    station = _station_clause(local_bad, station_configured, station_fresh)
+    forecast = None
+    if forecast_hits:
+        forecast = "the forecast is " + ", ".join(forecast_hits)
+    elif forecast_condition:
+        forecast = f"the forecast is {forecast_condition}"
+    causes = [part for part in (station if local_bad else None, forecast if forecast_hits else None) if part]
+    if is_on and causes:
+        sentence = "On because " + " and ".join(causes) + "."
+        if not local_bad and station:
+            sentence += " " + _cap(station) + "."
+        return sentence
+    quiet = [part for part in (station, forecast) if part]
+    if not quiet:
+        return "Off."
+    return "Off. " + ". ".join(_cap(part) for part in quiet) + "."
+
+
+def _station_clause(local_bad: bool, station_configured: bool, station_fresh: bool) -> str | None:
+    if not station_configured:
+        return None
+    if local_bad:
+        return "the station reports rain"
+    if not station_fresh:
+        return "the station has not reported in the last 15 minutes"
+    return "the station is dry"
+
+
+def _cap(text: str) -> str:
+    return text[0].upper() + text[1:]
+
+
 def merge_bad_weather(
     *,
     local_bad: bool,

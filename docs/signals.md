@@ -79,5 +79,6 @@ Entities on the device:
 |---|---|---|
 | Condition | weather state | Forecast condition, or `rainy` when only the station sees rain |
 | Bad weather | on / off | On while the station reports rain or the forecast condition is selected |
+| Reason | sentence | Why Bad weather is on or off, also written to the activity log when it changes |
 
 The Configuration card has **Weather station** and **Forecast**. Weather station can be set to `none`.

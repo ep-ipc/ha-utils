@@ -58,7 +58,10 @@ async def async_setup_entry(
                 hass, entry, subentry.subentry_id, dict(subentry.data), "bad_weather"
             )
             async_add_entities(
-                [WeatherConditionSensor(runtime, subentry.title)],
+                [
+                    WeatherConditionSensor(runtime, subentry.title),
+                    WeatherReasonSensor(runtime, subentry.title),
+                ],
                 config_subentry_id=subentry.subentry_id,
             )
 
@@ -202,3 +205,23 @@ class WeatherConditionSensor(SensorEntity):
             "forecast_bad": self.runtime.forecast_bad,
             "station_fresh": self.runtime.station_fresh,
         }
+
+
+class WeatherReasonSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Reason"
+    _attr_icon = "mdi:message-text-outline"
+
+    def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_reason"
+        self._attr_device_info = _device(runtime.subentry_id, title, "Bad weather")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> str | None:
+        return self.runtime.reason or None
