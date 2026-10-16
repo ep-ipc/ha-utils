@@ -105,6 +105,54 @@ def test_level_falls_only_on_the_calm_number() -> None:
     assert snap.level == "safe"
 
 
+def test_temperature_prefers_a_fresh_station_and_keeps_forecast_warnings() -> None:
+    merged = logic.merge_temperature(
+        local=88.0,
+        local_fresh=True,
+        forecast_now=80.0,
+        forecast_high=95.0,
+        forecast_low=70.0,
+        hot_line=90.0,
+        cold_line=32.0,
+    )
+    assert merged.temperature == 88.0
+    assert merged.hot is True
+    assert merged.cold is False
+
+    stale = logic.merge_temperature(
+        local=100.0,
+        local_fresh=False,
+        forecast_now=70.0,
+        forecast_high=70.0,
+        forecast_low=20.0,
+        hot_line=90.0,
+        cold_line=32.0,
+    )
+    assert stale.temperature == 70.0
+    assert stale.hot is False
+    assert stale.cold is True
+
+
+def test_bad_weather_turns_on_for_station_rain_or_forecast() -> None:
+    condition, active = logic.merge_bad_weather(
+        local_bad=True, forecast_condition="sunny", forecast_bad=False
+    )
+    assert condition == "rainy"
+    assert active is True
+
+    condition, active = logic.merge_bad_weather(
+        local_bad=False, forecast_condition="lightning", forecast_bad=True
+    )
+    assert condition == "lightning"
+    assert active is True
+
+    condition, active = logic.merge_bad_weather(
+        local_bad=True, forecast_condition="pouring", forecast_bad=True
+    )
+    assert condition == "pouring"
+    assert active is True
+
+
 def test_state_round_trip() -> None:
     item = engine()
     item.observe_gust(START, 12.0)

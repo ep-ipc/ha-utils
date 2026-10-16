@@ -83,11 +83,17 @@ class ThresholdBinarySensor(BinarySensorEntity):
         if self.runtime.kind == "temperature":
             return {
                 "temperature": self.runtime.temperature,
+                "local_temperature": self.runtime.local_temperature,
+                "forecast_temperature": self.runtime.forecast_temperature,
+                "station_fresh": self.runtime.station_fresh,
                 "hot_threshold": self.data_value("hot_threshold"),
                 "cold_threshold": self.data_value("cold_threshold"),
             }
         return {
             "condition": self.runtime.condition,
+            "local_bad": self.runtime.local_bad,
+            "forecast_bad": self.runtime.forecast_bad,
+            "station_fresh": self.runtime.station_fresh,
             "conditions": self.runtime.data.get("storm_conditions"),
         }
 

@@ -263,6 +263,52 @@ class WindEngine:
                 self.samples.append((parsed, float(value)))
 
 
+@dataclass(frozen=True)
+class TemperatureMerge:
+    """Published temperature plus the hot and cold flags."""
+
+    temperature: float | None
+    hot: bool
+    cold: bool
+
+
+def merge_temperature(
+    *,
+    local: float | None,
+    local_fresh: bool,
+    forecast_now: float | None,
+    forecast_high: float | None,
+    forecast_low: float | None,
+    hot_line: float | None,
+    cold_line: float | None,
+) -> TemperatureMerge:
+    """Prefer a fresh station reading. Forecast can turn hot or cold on, not off."""
+
+    temperature = local if local_fresh and local is not None else forecast_now
+    hot = bool(
+        (local_fresh and local is not None and hot_line is not None and local > hot_line)
+        or (forecast_high is not None and hot_line is not None and forecast_high > hot_line)
+    )
+    cold = bool(
+        (local_fresh and local is not None and cold_line is not None and local < cold_line)
+        or (forecast_low is not None and cold_line is not None and forecast_low < cold_line)
+    )
+    return TemperatureMerge(temperature, hot, cold)
+
+
+def merge_bad_weather(
+    *,
+    local_bad: bool,
+    forecast_condition: str | None,
+    forecast_bad: bool,
+) -> tuple[str | None, bool]:
+    """Station rain and a bad forecast each turn the signal on."""
+
+    if local_bad and not forecast_bad:
+        return "rainy", True
+    return forecast_condition, bool(local_bad or forecast_bad)
+
+
 def _parse_stamp(value: object) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None

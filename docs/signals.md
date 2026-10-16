@@ -44,38 +44,40 @@ The Configuration card selectors are **Weather station** and **Forecast**.
 
 ## Temperature
 
-One entry for heat and cold. It is separate from Wind.
+One entry for heat and cold. It is separate from Wind. Hot and cold are your lines, not a fixed definition. They start at 90 and 32, in the forecast temperature unit, and you can change them on the device page.
 
 Inputs:
 
-- Weather entity
+- Optional weather-station temperature sensor. A fresh reading (updated in the last 15 minutes) is the published temperature.
+- Forecast `weather` entity. Used when the station is missing or stale. The high and low over the next 2 hours can turn Hot or Cold on early. A cooler or warmer forecast cannot turn them off while the live station is still past the line.
 - Hot above, default 90
 - Cold below, default 32
-
-Both thresholds use the weather entity's temperature unit.
 
 Entities on the device:
 
 | Entity name | State | Use |
 |---|---|---|
-| Temperature | number | The current weather temperature |
-| Hot | on / off | On while temperature is above Hot above |
-| Cold | on / off | On while temperature is below Cold below |
+| Temperature | number | Live station temperature, or the forecast temperature when the station is stale |
+| Hot | on / off | On while the live reading or the forecast high is above Hot above |
+| Cold | on / off | On while the live reading or the forecast low is below Cold below |
 
-The Configuration card selector is **Weather**.
+The Configuration card has **Weather station**, **Forecast**, **Hot above**, and **Cold below**. Weather station can be set to `none`.
 
 ## Bad weather
 
 Inputs:
 
-- Weather entity
+- Optional weather-station rain sensor. A moisture sensor that is on, or a rain amount above 0, counts as rain when that sensor was updated in the last 15 minutes.
+- Forecast `weather` entity
 - Conditions, default lightning, lightning-rainy, pouring, and rainy
+
+Either source can turn the signal on. Station rain stays on even if the forecast still says sunny. A forecast condition in the list turns it on even if the station is dry, so you can act before the rain arrives.
 
 Entities on the device:
 
 | Entity name | State | Use |
 |---|---|---|
-| Condition | weather state | The current condition, such as `rainy` or `sunny` |
-| Bad weather | on / off | On while Condition is one of the selected states |
+| Condition | weather state | Forecast condition, or `rainy` when only the station sees rain |
+| Bad weather | on / off | On while the station reports rain or the forecast condition is selected |
 
-The Configuration card selector is **Weather**.
+The Configuration card has **Weather station** and **Forecast**. Weather station can be set to `none`.

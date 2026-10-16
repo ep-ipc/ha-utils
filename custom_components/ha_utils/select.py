@@ -34,6 +34,7 @@ async def async_setup_entry(
                     name="Weather station",
                     icon="mdi:weather-windy",
                     model="Wind",
+                    choices="wind",
                 ),
                 SourceSelect(
                     entry.entry_id,
@@ -42,19 +43,52 @@ async def async_setup_entry(
                     name="Forecast",
                     icon="mdi:weather-partly-cloudy",
                     model="Wind",
+                    choices="weather",
                 ),
             ]
-        elif subentry.subentry_type in ("temperature", "bad_weather"):
-            model = "Temperature" if subentry.subentry_type == "temperature" else "Bad weather"
+        elif subentry.subentry_type == "temperature":
             entities = [
                 SourceSelect(
                     entry.entry_id,
                     subentry,
+                    key="station_entity",
+                    name="Weather station",
+                    icon="mdi:thermometer",
+                    model="Temperature",
+                    choices="temperature",
+                    allow_none=True,
+                ),
+                SourceSelect(
+                    entry.entry_id,
+                    subentry,
                     key="weather_entity",
-                    name="Weather",
+                    name="Forecast",
                     icon="mdi:weather-partly-cloudy",
-                    model=model,
-                )
+                    model="Temperature",
+                    choices="weather",
+                ),
+            ]
+        elif subentry.subentry_type == "bad_weather":
+            entities = [
+                SourceSelect(
+                    entry.entry_id,
+                    subentry,
+                    key="station_entity",
+                    name="Weather station",
+                    icon="mdi:weather-rainy",
+                    model="Bad weather",
+                    choices="rain",
+                    allow_none=True,
+                ),
+                SourceSelect(
+                    entry.entry_id,
+                    subentry,
+                    key="weather_entity",
+                    name="Forecast",
+                    icon="mdi:weather-partly-cloudy",
+                    model="Bad weather",
+                    choices="weather",
+                ),
             ]
         else:
             continue
@@ -86,10 +120,14 @@ class SourceSelect(SelectEntity):
         name: str,
         icon: str,
         model: str,
+        choices: str,
+        allow_none: bool = False,
     ) -> None:
         self.entry_id = entry_id
         self.subentry_id = subentry.subentry_id
         self.key = key
+        self.choices = choices
+        self.allow_none = allow_none
         self._attr_name = name
         self._attr_icon = icon
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
@@ -147,7 +185,7 @@ class SourceSelect(SelectEntity):
     @property
     def options(self) -> list[str]:
         found: list[str] = []
-        if self.key == "weather_entity":
+        if self.choices == "weather":
             found = [
                 state.entity_id
                 for state in self.hass.states.async_all("weather")
@@ -155,34 +193,58 @@ class SourceSelect(SelectEntity):
             ]
         else:
             registry = er.async_get(self.hass)
-            for state in self.hass.states.async_all("sensor"):
-                if state.attributes.get("device_class") != "wind_speed":
-                    continue
-                registered = registry.async_get(state.entity_id)
-                if registered is not None and registered.platform == DOMAIN:
-                    continue
-                found.append(state.entity_id)
+            domains = ("binary_sensor", "sensor") if self.choices == "rain" else ("sensor",)
+            wanted = {
+                "wind": "wind_speed",
+                "temperature": "temperature",
+            }.get(self.choices)
+            for domain in domains:
+                for state in self.hass.states.async_all(domain):
+                    device_class = state.attributes.get("device_class")
+                    if self.choices == "rain":
+                        if device_class not in ("moisture", "precipitation", "precipitation_intensity"):
+                            continue
+                    elif device_class != wanted:
+                        continue
+                    registered = registry.async_get(state.entity_id)
+                    if registered is not None and registered.platform == DOMAIN:
+                        continue
+                    found.append(state.entity_id)
         current = self._current()
         if current and current not in found:
             found.append(current)
-        return sorted(set(found))
+        choices = sorted(set(found))
+        if self.allow_none:
+            return ["none", *choices]
+        return choices
 
     @property
     def current_option(self) -> str | None:
         current = self._current()
         if current in self.options:
             return current
+        if self.allow_none and current is None:
+            return "none"
         return None
 
     async def async_select_option(self, option: str) -> None:
-        if option not in self.options or option == self._current():
+        current = self._current()
+        if option not in self.options:
+            return
+        if option == "none":
+            if current is None:
+                return
+        elif option == current:
             return
         entry = self.hass.config_entries.async_get_entry(self.entry_id)
         subentry = None if entry is None else entry.subentries.get(self.subentry_id)
         if entry is None or subentry is None:
             return
         data = dict(subentry.data)
-        data[self.key] = option
+        if option == "none":
+            data.pop(self.key, None)
+        else:
+            data[self.key] = option
         if self.key == "gust_entity":
             heartbeat = data.get("heartbeat_entity")
             if isinstance(heartbeat, str) and not _same_device(self.hass, heartbeat, option):

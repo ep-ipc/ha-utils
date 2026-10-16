@@ -44,10 +44,11 @@
       "step": {
         "user": {
           "title": "Temperature",
-          "description": "Publishes the weather temperature plus Hot and Cold, which automations can trigger on.",
+          "description": "Merges an optional live temperature sensor with the forecast. Hot and Cold use your thresholds, which start at 90 and 32.",
           "data": {
             "name": "Name",
-            "weather_entity": "Weather entity",
+            "station_entity": "Weather station",
+            "weather_entity": "Forecast",
             "hot_threshold": "Hot above",
             "cold_threshold": "Cold below"
           }
@@ -63,10 +64,11 @@
       "step": {
         "user": {
           "title": "Bad weather",
-          "description": "Publishes the weather condition and turns on while that condition is one of the selected states.",
+          "description": "Merges an optional live rain sensor with the forecast. Turns on when either one reports bad weather.",
           "data": {
             "name": "Name",
-            "weather_entity": "Weather entity",
+            "station_entity": "Weather station",
+            "weather_entity": "Forecast",
             "storm_conditions": "Bad weather conditions"
           }
         }

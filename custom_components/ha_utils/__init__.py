@@ -13,7 +13,7 @@ from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["sensor", "binary_sensor", "select"]
+PLATFORMS: list[str] = ["sensor", "binary_sensor", "select", "number"]
 
 
 async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:

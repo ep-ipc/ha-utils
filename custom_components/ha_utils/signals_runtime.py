@@ -18,7 +18,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .logic import WindEngine, WindOptions
+from .logic import WindEngine, WindOptions, merge_bad_weather, merge_temperature
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -235,56 +235,163 @@ def async_get_threshold_runtime(
     return runtime
 
 
+_STORM_DEFAULT = ["lightning", "lightning-rainy", "pouring", "rainy"]
+_STATION_FRESH = timedelta(minutes=15)
+_FORECAST_WINDOW = timedelta(hours=2)
+
+
 class ThresholdRuntime(SignalRuntime):
-    """Temperature and bad-weather state from one weather entity."""
+    """Temperature or bad weather from a station, a forecast, or both."""
 
     def __init__(self, hass: HomeAssistant, subentry_id: str, data: dict[str, Any], kind: str) -> None:
         super().__init__(hass, subentry_id, data)
         self.kind = kind
         self.temperature: float | None = None
+        self.local_temperature: float | None = None
+        self.forecast_temperature: float | None = None
         self.condition: str | None = None
+        self.station_fresh = False
+        self.local_bad = False
+        self.forecast_bad = False
         self.hot = False
         self.cold = False
         self.is_on = False
+        self._forecast_high: float | None = None
+        self._forecast_low: float | None = None
+        self._forecast_conditions: list[str] = []
 
     def async_start(self) -> Any:
-        weather = self.data["weather_entity"]
+        self.hass.async_create_task(self._async_start())
+        return self._stop
+
+    async def _async_start(self) -> None:
+        await self._async_poll_forecast()
+        watched = [self.data["weather_entity"]]
+        station = self.data.get("station_entity")
+        if isinstance(station, str) and station:
+            watched.append(station)
 
         @callback
         def _state_changed(_event: Event[EventStateChangedData]) -> None:
-            self._refresh()
+            self._refresh(dt_util.now())
 
-        self._refresh()
-        self._unsubs.append(async_track_state_change_event(self.hass, [weather], _state_changed))
-        return self._stop
+        self._unsubs.append(async_track_state_change_event(self.hass, watched, _state_changed))
+        self._unsubs.append(
+            async_track_time_interval(self.hass, self._async_poll_forecast, FORECAST_EVERY)
+        )
 
-    def _refresh(self) -> None:
+    def _line(self, key: str, fallback: float) -> float:
+        value = self.data.get(key, fallback)
+        return float(value) if isinstance(value, (int, float)) else fallback
+
+    def _conditions(self) -> list[str]:
+        raw = self.data.get("storm_conditions") or _STORM_DEFAULT
+        return [str(item) for item in raw]
+
+    def _refresh(self, now: datetime) -> None:
         weather = self.data["weather_entity"]
-        state = self.hass.states.get(weather)
-        self.missing = [] if state is not None else [weather]
+        station_id = self.data.get("station_entity")
+        missing = [weather] if self.hass.states.get(weather) is None else []
+        if isinstance(station_id, str) and station_id and self.hass.states.get(station_id) is None:
+            missing.append(station_id)
+        self.missing = missing
         self._set_issue()
-        self.condition = None if state is None else state.state
-        raw_temp = None if state is None else state.attributes.get("temperature")
-        self.temperature = float(raw_temp) if isinstance(raw_temp, (int, float)) else None
-        self.hot = False
-        self.cold = False
-        self.is_on = False
-        if state is None:
-            self._notify()
-            return
+
+        station = self.hass.states.get(station_id) if isinstance(station_id, str) else None
+        reported = _reported_at(station)
+        self.station_fresh = (
+            station is not None
+            and station.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+            and reported is not None
+            and (now - reported).total_seconds() < _STATION_FRESH.total_seconds()
+        )
+        self.local_temperature = _float_state(station) if self.kind == "temperature" else None
+        self.local_bad = self.station_fresh and _station_reports_bad_weather(station)
+        forecast_state = self.hass.states.get(weather)
+        forecast_condition = None if forecast_state is None else forecast_state.state
+        conditions = self._conditions()
+        self.forecast_bad = forecast_condition in conditions or any(
+            item in conditions for item in self._forecast_conditions
+        )
         if self.kind == "temperature":
-            hot_line = self.data.get("hot_threshold")
-            cold_line = self.data.get("cold_threshold")
-            if self.temperature is not None and isinstance(hot_line, (int, float)):
-                self.hot = self.temperature > float(hot_line)
-            if self.temperature is not None and isinstance(cold_line, (int, float)):
-                self.cold = self.temperature < float(cold_line)
+            merged = merge_temperature(
+                local=self.local_temperature,
+                local_fresh=self.station_fresh,
+                forecast_now=self.forecast_temperature,
+                forecast_high=self._forecast_high,
+                forecast_low=self._forecast_low,
+                hot_line=self._line("hot_threshold", 90),
+                cold_line=self._line("cold_threshold", 32),
+            )
+            self.temperature = merged.temperature
+            self.hot = merged.hot
+            self.cold = merged.cold
+            self.condition = forecast_condition
+            self.is_on = self.hot or self.cold
         else:
-            conditions = self.data.get("storm_conditions") or [
-                "lightning",
-                "lightning-rainy",
-                "pouring",
-                "rainy",
-            ]
-            self.is_on = state.state in conditions
+            self.condition, self.is_on = merge_bad_weather(
+                local_bad=self.local_bad,
+                forecast_condition=forecast_condition,
+                forecast_bad=self.forecast_bad,
+            )
+            self.temperature = None
+            self.hot = False
+            self.cold = False
         self._notify()
+
+    async def _async_poll_forecast(self, _now: datetime | None = None) -> None:
+        weather = self.data["weather_entity"]
+        now = dt_util.now()
+        state = self.hass.states.get(weather)
+        if state is None:
+            self.forecast_temperature = None
+            self._forecast_high = None
+            self._forecast_low = None
+            self._forecast_conditions = []
+            self._refresh(now)
+            return
+        raw_temp = state.attributes.get("temperature")
+        current = float(raw_temp) if isinstance(raw_temp, (int, float)) else None
+        hourly_temps: list[float] = []
+        hourly_conditions: list[str] = []
+        try:
+            response = await self.hass.services.async_call(
+                "weather",
+                "get_forecasts",
+                {"type": "hourly"},
+                target={"entity_id": weather},
+                blocking=True,
+                return_response=True,
+            )
+        except Exception:  # noqa: BLE001 - current weather attributes still apply
+            _LOGGER.warning("Signal could not read the forecast for %s", weather)
+            response = None
+        payload = (response or {}).get(weather, {})
+        for row in payload.get("forecast", []):
+            stamp = dt_util.parse_datetime(str(row.get("datetime") or ""))
+            if stamp is not None and dt_util.as_local(stamp) - now > _FORECAST_WINDOW:
+                continue
+            if stamp is None and len(hourly_temps) >= 2 and len(hourly_conditions) >= 2:
+                continue
+            temp = row.get("temperature")
+            if isinstance(temp, (int, float)):
+                hourly_temps.append(float(temp))
+            condition = row.get("condition")
+            if isinstance(condition, str):
+                hourly_conditions.append(condition)
+        temps = [current] if current is not None else []
+        temps.extend(hourly_temps)
+        self.forecast_temperature = current
+        self._forecast_high = max(temps) if temps else None
+        self._forecast_low = min(temps) if temps else None
+        self._forecast_conditions = hourly_conditions
+        self._refresh(now)
+
+
+def _station_reports_bad_weather(state: State | None) -> bool:
+    if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE, ""):
+        return False
+    if state.entity_id.startswith("binary_sensor.") or state.attributes.get("device_class") == "moisture":
+        return state.state == "on"
+    amount = _float_state(state)
+    return amount is not None and amount > 0

@@ -156,6 +156,8 @@ class TemperatureSubentryFlow(_NamedSubentryFlow):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
+            if not user_input.get("station_entity"):
+                user_input.pop("station_entity", None)
             return self._finish(user_input)
         defaults: dict[str, Any] = {}
         if self.source == SOURCE_RECONFIGURE:
@@ -164,9 +166,16 @@ class TemperatureSubentryFlow(_NamedSubentryFlow):
         weather_key: Any = vol.Required("weather_entity")
         if defaults.get("weather_entity"):
             weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
+        station_key: Any = vol.Optional("station_entity")
+        if defaults.get("station_entity"):
+            station_key = vol.Optional(
+                "station_entity",
+                description={"suggested_value": defaults["station_entity"]},
+            )
         schema = vol.Schema(
             {
                 vol.Required("name", default=defaults.get("name", "Temperature")): str,
+                station_key: _sensor_selector(),
                 weather_key: _weather_selector(),
                 vol.Required(
                     "hot_threshold", default=defaults.get("hot_threshold", 90)
@@ -193,6 +202,8 @@ class BadWeatherSubentryFlow(_NamedSubentryFlow):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
+            if not user_input.get("station_entity"):
+                user_input.pop("station_entity", None)
             return self._finish(user_input)
         defaults: dict[str, Any] = {}
         if self.source == SOURCE_RECONFIGURE:
@@ -201,9 +212,18 @@ class BadWeatherSubentryFlow(_NamedSubentryFlow):
         weather_key: Any = vol.Required("weather_entity")
         if defaults.get("weather_entity"):
             weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
+        station_key: Any = vol.Optional("station_entity")
+        if defaults.get("station_entity"):
+            station_key = vol.Optional(
+                "station_entity",
+                description={"suggested_value": defaults["station_entity"]},
+            )
         schema = vol.Schema(
             {
                 vol.Required("name", default=defaults.get("name", "Bad weather")): str,
+                station_key: selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain=["binary_sensor", "sensor"])
+                ),
                 weather_key: _weather_selector(),
                 vol.Required(
                     "storm_conditions",

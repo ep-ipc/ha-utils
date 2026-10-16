@@ -153,6 +153,16 @@ class TemperatureReadingSensor(SensorEntity):
         return self.runtime.temperature
 
     @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "local_temperature": self.runtime.local_temperature,
+            "forecast_temperature": self.runtime.forecast_temperature,
+            "station_fresh": self.runtime.station_fresh,
+            "hot_threshold": self.runtime.data.get("hot_threshold", 90),
+            "cold_threshold": self.runtime.data.get("cold_threshold", 32),
+        }
+
+    @property
     def native_unit_of_measurement(self) -> str | None:
         state = self.hass.states.get(self.runtime.data["weather_entity"])
         if state is None:
@@ -179,3 +189,11 @@ class WeatherConditionSensor(SensorEntity):
     @property
     def native_value(self) -> str | None:
         return self.runtime.condition
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "local_bad": self.runtime.local_bad,
+            "forecast_bad": self.runtime.forecast_bad,
+            "station_fresh": self.runtime.station_fresh,
+        }
