@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
@@ -87,6 +87,7 @@ class WindSourceSelect(SelectEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
 
+        @callback
         def _refresh(_event) -> None:
             self.async_write_ha_state()
 
@@ -117,9 +118,14 @@ class WindSourceSelect(SelectEntity):
                 if state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
             ]
         else:
+            registry = er.async_get(self.hass)
             for state in self.hass.states.async_all("sensor"):
-                if state.attributes.get("device_class") == "wind_speed":
-                    found.append(state.entity_id)
+                if state.attributes.get("device_class") != "wind_speed":
+                    continue
+                registered = registry.async_get(state.entity_id)
+                if registered is not None and registered.platform == DOMAIN:
+                    continue
+                found.append(state.entity_id)
         current = self._current()
         if current and current not in found:
             found.append(current)

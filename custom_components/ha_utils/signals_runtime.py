@@ -148,6 +148,7 @@ class WindSignalRuntime(SignalRuntime):
         if self._save_unsub is not None:
             return
 
+        @callback
         def _save(_now: datetime) -> None:
             self._save_unsub = None
             self.hass.async_create_task(self._store.async_save(self.engine.export_state()))
