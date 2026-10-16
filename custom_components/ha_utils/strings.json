@@ -9,5 +9,91 @@
     "abort": {
       "single_instance_allowed": "Home Assistant Utils is already configured."
     }
+  },
+  "config_subentries": {
+    "wind_signal": {
+      "initiate_flow": {
+        "user": "Add wind signal",
+        "reconfigure": "Edit wind signal"
+      },
+      "entry_type": "Wind signal",
+      "step": {
+        "user": {
+          "title": "Wind signal",
+          "description": "Reads a gust sensor and a forecast weather entity. Publishes level, risk, calm, and gust factor for automations.",
+          "data": {
+            "name": "Name",
+            "gust_entity": "Gust sensor",
+            "weather_entity": "Forecast weather entity",
+            "heartbeat_entity": "Heartbeat sensor",
+            "factor_seed": "Starting gust factor",
+            "rise_big": "Rise to big",
+            "rise_all": "Rise to all",
+            "fall_all": "Fall from all",
+            "fall_big": "Fall to safe"
+          }
+        }
+      }
+    },
+    "hot_day": {
+      "initiate_flow": {
+        "user": "Add hot day signal",
+        "reconfigure": "Edit hot day signal"
+      },
+      "entry_type": "Hot day",
+      "step": {
+        "user": {
+          "title": "Hot day",
+          "description": "Turns on while the weather entity temperature is above the threshold.",
+          "data": {
+            "name": "Name",
+            "weather_entity": "Weather entity",
+            "threshold": "Temperature threshold"
+          }
+        }
+      }
+    },
+    "cold_day": {
+      "initiate_flow": {
+        "user": "Add cold day signal",
+        "reconfigure": "Edit cold day signal"
+      },
+      "entry_type": "Cold day",
+      "step": {
+        "user": {
+          "title": "Cold day",
+          "description": "Turns on while the weather entity temperature is below the threshold.",
+          "data": {
+            "name": "Name",
+            "weather_entity": "Weather entity",
+            "threshold": "Temperature threshold"
+          }
+        }
+      }
+    },
+    "thunderstorm": {
+      "initiate_flow": {
+        "user": "Add thunderstorm signal",
+        "reconfigure": "Edit thunderstorm signal"
+      },
+      "entry_type": "Thunderstorm",
+      "step": {
+        "user": {
+          "title": "Thunderstorm",
+          "description": "Turns on while the weather entity state is one of the selected conditions.",
+          "data": {
+            "name": "Name",
+            "weather_entity": "Weather entity",
+            "storm_conditions": "Storm conditions"
+          }
+        }
+      }
+    }
+  },
+  "issues": {
+    "signal_source_missing": {
+      "title": "Weather signal is missing a source",
+      "description": "This signal needs {entities}. It stays unavailable until those entities exist again."
+    }
   }
 }

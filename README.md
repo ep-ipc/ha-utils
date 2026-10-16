@@ -9,6 +9,7 @@ HACS custom integration that deploys reusable Home Assistant resources into your
 | [Themes](docs/themes.md) | Bundled themes (font scale pack) |
 | [Scripts](docs/scripts.md) | Bundled package scripts (expose-all to voice assistant) |
 | [Blueprints](docs/blueprints.md) | Bundled automation and script blueprints |
+| [Signals](docs/signals.md) | Optional entries that publish wind, heat, cold, and storm entities for automations |
 | [Install](docs/install.md) | HACS setup, integration install, required `configuration.yaml` includes |
 | [Deploy](docs/deploy.md) | How bundled files map to `/config`, copy policy, and upgrade workflow |
 
