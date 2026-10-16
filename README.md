@@ -1,6 +1,6 @@
 # Home Assistant Utils
 
-HACS custom integration that deploys reusable Home Assistant resources into your `/config` directory — themes, packages, blueprints, and integration services.
+HACS custom integration for reusable Home Assistant pieces: wind, temperature, and bad-weather signals you trigger from your own automations, plus bundled themes, scripts, and one script blueprint.
 
 ## Features
 
@@ -20,11 +20,14 @@ Full doc index: [docs/README.md](docs/README.md)
 1. Install in HACS as type **Integration**.
 2. Restart Home Assistant and add **Home Assistant Utils** under **Settings → Devices & services**.
 3. Add required includes to `configuration.yaml` — see [Install](docs/install.md).
-4. Use deployed resources from the theme selector, Blueprints, or Scripts UI.
+4. Under that integration, add **Wind**, **Temperature**, or **Bad weather**. Trigger your own automations on the entities those devices publish. See [Signals](docs/signals.md).
+5. Themes, the expose-all script, and the control-all blueprint are copied into `/config` on setup. See [Install](docs/install.md).
 
-Bundled resources are **copy-if-missing** on setup. Run `ha_utils.deploy_bundled` to copy missing files or refresh after upgrades — see [Deploy](docs/deploy.md).
+Setup refreshes bundled files and removes the retired weather-alert blueprints. See [Deploy](docs/deploy.md).
 
 ## Local development
+
+Development rules are in [AGENT.md](AGENT.md).
 
 ```bash
 make test

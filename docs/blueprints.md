@@ -39,7 +39,7 @@ Deploy removes these retired weather-alert blueprints if they are still in `/con
 - `blueprints/automation/ha_utils/cold_day.yaml`
 - `blueprints/automation/ha_utils/possible_thunderstorm.yaml`
 
-A `.bak` copy is kept when backup is enabled. Automations already created from those blueprints stay in Home Assistant until you delete them. New automations should use the signal entities.
+A `.bak` copy is kept when backup is enabled. Automations already created from those blueprints stop loading, because the blueprint file is gone. Replace each one with a normal automation that triggers on a [signal entity](signals.md). New automations should use those entities directly.
 
 ## How to use
 

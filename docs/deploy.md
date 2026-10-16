@@ -25,7 +25,7 @@ There is no per-resource deploy logic. Every file under `bundled/` is walked rec
 
 | Trigger | When |
 |---------|------|
-| Integration setup | First time you add **Home Assistant Utils** |
+| Integration setup | Every time **Home Assistant Utils** sets up, including restart and reload |
 | `ha_utils.deploy_bundled` | Manually from **Settings → Developer tools → Actions** |
 
 ## Copy policy
@@ -36,8 +36,18 @@ There is no per-resource deploy logic. Every file under `bundled/` is walked rec
 | Destination exists, `overwrite_existing: true` (default), content differs | Optional `.bak` backup, then replace → logged as `updated` |
 | Destination exists, `overwrite_existing: false` | Keep existing file → logged as `skipped` |
 | Source and destination identical | Skip even when overwrite is enabled |
+| Retired weather-alert blueprint still in `/config` | `.bak` backup when backup is enabled, then delete → logged as `removed` |
 
-After each run, a marker file is written to `/config/.ha_utils_deployed` with version, timestamp, and deploy results.
+Retired paths:
+
+- `blueprints/automation/ha_utils/high_wind.yaml`
+- `blueprints/automation/ha_utils/hot_day.yaml`
+- `blueprints/automation/ha_utils/cold_day.yaml`
+- `blueprints/automation/ha_utils/possible_thunderstorm.yaml`
+
+Those alerts are [signal entries](signals.md) now. An automation that still points at one of those blueprint files stops loading until you replace it with a normal automation that triggers on the signal entities.
+
+After each run, a marker file is written to `/config/.ha_utils_deployed` with version, timestamp, and deploy results, including `removed`.
 
 ## Manual deploy
 
@@ -59,7 +69,7 @@ After upgrading HA Utils in HACS:
 3. Keep `overwrite_existing: true` (default).
 4. Keep `backup_existing: true` unless you do not want `.bak` files.
 
-This refreshes blueprints and other bundled files that were skipped on first install.
+This refreshes bundled files and removes the retired weather-alert blueprints.
 
 ## Folder conventions
 
@@ -78,7 +88,6 @@ bundled/packages/     → /config/packages/
 Group project content so it does not clash with user files:
 
 ```
-bundled/blueprints/automation/ha_utils/   # automation blueprint namespace
 bundled/blueprints/script/ha_utils/       # script blueprint namespace
 bundled/packages/ha_utils/                # package sub-resources
 bundled/packages/ha_utils/scripts/        # scripts
@@ -124,8 +133,8 @@ bundled/
 ## Limitations
 
 - Deploy does **not** edit `configuration.yaml`. You must add theme and package includes yourself.
-- Deploy does **not** delete removed bundled files from `/config`. Delete stale files manually if needed.
-- Existing files are updated on deploy by default. Set `overwrite_existing: false` if you want a copy-if-missing run.
+- Deploy removes only the retired weather-alert blueprints listed above. Other files that leave the bundle stay in `/config` until you delete them.
+- Existing files are updated on deploy by default. Set `overwrite_existing: false` if you want a copy-if-missing run. Retired blueprints are still removed.
 
 ## Adding a new bundled script
 

@@ -9,7 +9,7 @@ User and contributor docs for the Home Assistant Utils integration.
 | [Themes](themes.md) | Bundled themes (font scale pack) |
 | [Scripts](scripts.md) | Bundled package scripts (expose-all to voice assistant) |
 | [Blueprints](blueprints.md) | Bundled script blueprint |
-| [Signals](signals.md) | Wind, temperature, and bad weather entries that publish trigger entities |
+| [Signals](signals.md) | Wind, temperature, and bad weather devices, including live station merge and the bad-weather reason |
 | [Install](install.md) | HACS install, integration setup, required `configuration.yaml` includes |
 | [Deploy](deploy.md) | How bundled resources are copied to `/config`, conventions, and upgrade workflow |
 

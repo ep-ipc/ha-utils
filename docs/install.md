@@ -1,6 +1,6 @@
 # Install
 
-HA Utils is a HACS custom integration. It installs into `/config/custom_components/ha_utils` and deploys bundled resources (themes, packages, blueprints) into your Home Assistant config directory.
+HA Utils is a HACS custom integration. It installs into `/config/custom_components/ha_utils`. Signal devices are created inside the integration. Themes, packages, and the script blueprint are copied into your Home Assistant config directory.
 
 ## HACS install
 
@@ -10,7 +10,7 @@ HA Utils is a HACS custom integration. It installs into `/config/custom_componen
 4. Go to **Settings → Devices & services → Add integration**.
 5. Add **Home Assistant Utils**.
 
-On first setup, the integration copies bundled resources into `/config` using [copy-if-missing deploy](deploy.md).
+On setup, the integration copies bundled resources into `/config` and removes the retired weather-alert blueprints. See [Deploy](deploy.md). Signal entries do not need a `configuration.yaml` include.
 
 If HACS says it will install to `/config/custom_components/ha_utils`, that is expected. The integration then mirrors bundled files to their real destinations, such as `/config/themes` and `/config/packages`.
 

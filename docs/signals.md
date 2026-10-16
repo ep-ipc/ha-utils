@@ -12,7 +12,7 @@ Use them from your own automation: a state trigger on Level, Hot, Cold, or Bad w
 
 The new device is listed on that same page. Its entities are what automations use.
 
-Each device page has a Configuration card for its sources. Changing a selector switches that device.
+Each device page has a Configuration card. Changing a selector or a hot/cold number reloads that signal with the new settings. The weather-station list fills in after those sensors finish loading, and it does not include this signal's own entities. Choose `none` on Temperature or Bad weather to use the forecast only.
 
 ## Wind
 
@@ -40,7 +40,7 @@ The forecast is multiplied by the gust factor because it is a sustained wind and
 
 `big` means the lower rise line. `all` means the higher rise line.
 
-The Configuration card selectors are **Weather station** and **Forecast**.
+The Configuration card selectors are **Weather station** (a wind-speed sensor) and **Forecast**.
 
 ## Temperature
 
@@ -71,14 +71,18 @@ Inputs:
 - Forecast `weather` entity
 - Conditions, default lightning, lightning-rainy, pouring, and rainy
 
-Either source can turn the signal on. Station rain stays on even if the forecast still says sunny. A forecast condition in the list turns it on even if the station is dry, so you can act before the rain arrives.
+Either source can turn the signal on. Station rain stays on even if the forecast still says sunny. A forecast hour in the next 2 hours whose condition is in the list turns it on even if the station is dry and the current condition is still sunny.
+
+**Condition** is the current forecast state, or `rainy` when only the station sees rain. It can say `sunny` while **Bad weather** is on, because On includes rain that has not arrived yet.
+
+**Reason** is one sentence for the current decision, for example: `On because the forecast is rainy at 4:00 PM. The station is dry.` The same sentence is written to the activity log when it changes. Home Assistant still shows “No cause was recorded” on the state-change row, because that box is only filled when a person or an automation made the change. Read **Reason**, or the activity line that carries the sentence.
 
 Entities on the device:
 
 | Entity name | State | Use |
 |---|---|---|
-| Condition | weather state | Forecast condition, or `rainy` when only the station sees rain |
-| Bad weather | on / off | On while the station reports rain or the forecast condition is selected |
-| Reason | sentence | Why Bad weather is on or off, also written to the activity log when it changes |
+| Condition | weather state | Current forecast condition, or `rainy` when only the station sees rain |
+| Bad weather | on / off | On while the station reports rain or an upcoming forecast hour is in the selected list |
+| Reason | sentence | Why Bad weather is on or off |
 
-The Configuration card has **Weather station** and **Forecast**. Weather station can be set to `none`.
+The Configuration card has **Weather station** and **Forecast**. Weather station can be set to `none`. The station list is rain sensors: moisture, precipitation, and precipitation intensity.
