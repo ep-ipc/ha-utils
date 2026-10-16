@@ -5,11 +5,13 @@ from __future__ import annotations
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 
 from .const import DOMAIN
@@ -86,14 +88,34 @@ class WindSourceSelect(SelectEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self._refresh_unsub = None
+        self._published = self.options
 
         @callback
-        def _refresh(_event) -> None:
+        def _schedule(_event) -> None:
+            if self._refresh_unsub is not None:
+                return
+            self._refresh_unsub = async_call_later(self.hass, 2, _publish)
+
+        @callback
+        def _publish(_now) -> None:
+            self._refresh_unsub = None
+            current = self.options
+            if current == self._published:
+                return
+            self._published = current
             self.async_write_ha_state()
 
+        def _cancel_pending() -> None:
+            if self._refresh_unsub is not None:
+                self._refresh_unsub()
+                self._refresh_unsub = None
+
+        self.async_on_remove(_cancel_pending)
         self.async_on_remove(
-            self.hass.bus.async_listen(EVENT_ENTITY_REGISTRY_UPDATED, _refresh)
+            self.hass.bus.async_listen(EVENT_ENTITY_REGISTRY_UPDATED, _schedule)
         )
+        self.async_on_remove(self.hass.bus.async_listen(EVENT_STATE_CHANGED, _schedule))
 
     def _subentry(self) -> ConfigSubentry | None:
         entry = self.hass.config_entries.async_get_entry(self.entry_id)
