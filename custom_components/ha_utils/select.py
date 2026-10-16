@@ -22,30 +22,43 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add source pickers for each wind signal."""
+    """Add source pickers on each signal device page."""
 
     for subentry in entry.subentries.values():
-        if subentry.subentry_type != "wind_signal":
-            continue
-        async_add_entities(
-            [
-                WindSourceSelect(
+        if subentry.subentry_type == "wind_signal":
+            entities = [
+                SourceSelect(
                     entry.entry_id,
                     subentry,
                     key="gust_entity",
                     name="Weather station",
                     icon="mdi:weather-windy",
+                    model="Wind",
                 ),
-                WindSourceSelect(
+                SourceSelect(
                     entry.entry_id,
                     subentry,
                     key="weather_entity",
                     name="Forecast",
                     icon="mdi:weather-partly-cloudy",
+                    model="Wind",
                 ),
-            ],
-            config_subentry_id=subentry.subentry_id,
-        )
+            ]
+        elif subentry.subentry_type in ("temperature", "bad_weather"):
+            model = "Temperature" if subentry.subentry_type == "temperature" else "Bad weather"
+            entities = [
+                SourceSelect(
+                    entry.entry_id,
+                    subentry,
+                    key="weather_entity",
+                    name="Weather",
+                    icon="mdi:weather-partly-cloudy",
+                    model=model,
+                )
+            ]
+        else:
+            continue
+        async_add_entities(entities, config_subentry_id=subentry.subentry_id)
 
 
 def _same_device(hass: HomeAssistant, left: str, right: str) -> bool:
@@ -57,8 +70,8 @@ def _same_device(hass: HomeAssistant, left: str, right: str) -> bool:
     return bool(left_entry.device_id and left_entry.device_id == right_entry.device_id)
 
 
-class WindSourceSelect(SelectEntity):
-    """Pick the gust sensor or the forecast weather entity."""
+class SourceSelect(SelectEntity):
+    """Pick a gust sensor or a weather entity on the device page."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -72,6 +85,7 @@ class WindSourceSelect(SelectEntity):
         key: str,
         name: str,
         icon: str,
+        model: str,
     ) -> None:
         self.entry_id = entry_id
         self.subentry_id = subentry.subentry_id
@@ -83,7 +97,7 @@ class WindSourceSelect(SelectEntity):
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
             manufacturer="HA Utils",
-            model="Wind signal",
+            model=model,
         )
 
     async def async_added_to_hass(self) -> None:

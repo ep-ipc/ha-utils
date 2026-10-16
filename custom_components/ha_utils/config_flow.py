@@ -58,9 +58,8 @@ class HaUtilsConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return {
             "wind_signal": WindSignalSubentryFlow,
-            "hot_day": HotDaySubentryFlow,
-            "cold_day": ColdDaySubentryFlow,
-            "thunderstorm": ThunderstormSubentryFlow,
+            "temperature": TemperatureSubentryFlow,
+            "bad_weather": BadWeatherSubentryFlow,
         }
 
     async def async_step_user(
@@ -151,7 +150,7 @@ class WindSignalSubentryFlow(_NamedSubentryFlow):
         return self.async_show_form(step_id="user", data_schema=schema)
 
 
-class _TemperatureSubentryFlow(_NamedSubentryFlow):
+class TemperatureSubentryFlow(_NamedSubentryFlow):
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
         return await self.async_step_user(user_input)
 
@@ -167,9 +166,18 @@ class _TemperatureSubentryFlow(_NamedSubentryFlow):
             weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
         schema = vol.Schema(
             {
-                vol.Required("name", default=defaults.get("name", self._default_name)): str,
+                vol.Required("name", default=defaults.get("name", "Temperature")): str,
                 weather_key: _weather_selector(),
-                vol.Required("threshold", default=defaults.get("threshold", self._default_threshold)): selector.NumberSelector(
+                vol.Required(
+                    "hot_threshold", default=defaults.get("hot_threshold", 90)
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=-50, max=150, step=1, mode=selector.NumberSelectorMode.BOX
+                    )
+                ),
+                vol.Required(
+                    "cold_threshold", default=defaults.get("cold_threshold", 32)
+                ): selector.NumberSelector(
                     selector.NumberSelectorConfig(
                         min=-50, max=150, step=1, mode=selector.NumberSelectorMode.BOX
                     )
@@ -179,17 +187,7 @@ class _TemperatureSubentryFlow(_NamedSubentryFlow):
         return self.async_show_form(step_id="user", data_schema=schema)
 
 
-class HotDaySubentryFlow(_TemperatureSubentryFlow):
-    _default_name = "Hot day"
-    _default_threshold = 90
-
-
-class ColdDaySubentryFlow(_TemperatureSubentryFlow):
-    _default_name = "Cold day"
-    _default_threshold = 32
-
-
-class ThunderstormSubentryFlow(_NamedSubentryFlow):
+class BadWeatherSubentryFlow(_NamedSubentryFlow):
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
         return await self.async_step_user(user_input)
 
@@ -205,7 +203,7 @@ class ThunderstormSubentryFlow(_NamedSubentryFlow):
             weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
         schema = vol.Schema(
             {
-                vol.Required("name", default=defaults.get("name", "Thunderstorm")): str,
+                vol.Required("name", default=defaults.get("name", "Bad weather")): str,
                 weather_key: _weather_selector(),
                 vol.Required(
                     "storm_conditions",

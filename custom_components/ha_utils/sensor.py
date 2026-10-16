@@ -9,7 +9,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .signals_runtime import WindSignalRuntime
+from .signals_runtime import ThresholdRuntime, WindSignalRuntime, async_get_threshold_runtime
 
 _RUNTIMES = "runtimes"
 
@@ -39,6 +39,23 @@ async def async_setup_entry(
             ],
             config_subentry_id=subentry.subentry_id,
         )
+    for subentry in entry.subentries.values():
+        if subentry.subentry_type == "temperature":
+            runtime = async_get_threshold_runtime(
+                hass, entry, subentry.subentry_id, dict(subentry.data), "temperature"
+            )
+            async_add_entities(
+                [TemperatureReadingSensor(runtime, subentry.title)],
+                config_subentry_id=subentry.subentry_id,
+            )
+        elif subentry.subentry_type == "bad_weather":
+            runtime = async_get_threshold_runtime(
+                hass, entry, subentry.subentry_id, dict(subentry.data), "bad_weather"
+            )
+            async_add_entities(
+                [WeatherConditionSensor(runtime, subentry.title)],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 def _device(subentry_id: str, title: str, model: str) -> DeviceInfo:
@@ -58,7 +75,7 @@ class _WindSensor(SensorEntity):
         self.runtime = runtime
         self._attr_name = name
         self._attr_unique_id = f"{runtime.subentry_id}_{key}"
-        self._attr_device_info = _device(runtime.subentry_id, title, "Wind signal")
+        self._attr_device_info = _device(runtime.subentry_id, title, "Wind")
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -113,3 +130,52 @@ class WindNumberSensor(_WindSensor):
         if self._key == "calm":
             return snap.calm
         return snap.factor
+
+
+class TemperatureReadingSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Temperature"
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_temperature"
+        self._attr_device_info = _device(runtime.subentry_id, title, "Temperature")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> float | None:
+        return self.runtime.temperature
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        state = self.hass.states.get(self.runtime.data["weather_entity"])
+        if state is None:
+            return None
+        unit = state.attributes.get("temperature_unit")
+        return str(unit) if unit else None
+
+
+class WeatherConditionSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Condition"
+    _attr_icon = "mdi:weather-lightning-rainy"
+
+    def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_condition"
+        self._attr_device_info = _device(runtime.subentry_id, title, "Bad weather")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> str | None:
+        return self.runtime.condition

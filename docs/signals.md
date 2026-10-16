@@ -1,18 +1,22 @@
 # Signals
 
-Signal entries are added under the Home Assistant Utils integration. Each one reads a source entity and publishes a small set of entities an automation or scene can trigger on. The calculation stays inside the entry. There are no separate helpers to delete.
+Signal entries are added under the Home Assistant Utils integration. Each one reads a source entity and publishes entities an automation can trigger on. The calculation stays inside the entry. There are no separate helpers, and these entries do not run actions.
+
+Use them from your own automation: a state trigger on Level, Hot, Cold, or Bad weather, with whatever hold time and actions you want.
 
 ## Where to add one
 
 1. Open **Settings → Devices & services → Home Assistant Utils**.
-2. Choose **Add wind signal**, **Add hot day signal**, **Add cold day signal**, or **Add thunderstorm signal**.
+2. Choose **Add wind**, **Add temperature**, or **Add bad weather**.
 3. Pick the source entities and save.
 
 The new device is listed on that same page. Its entities are what automations use.
 
-On the wind device page, the Configuration card has two selectors: **Weather station** (a wind-speed sensor from the station) and **Forecast** (a weather entity). Changing either one switches the sources for that device.
+Each device page has a Configuration card for its sources. Changing a selector switches that device.
 
-## Wind signal
+## Wind
+
+A generic wind reading. It is not tied to shades or any other device.
 
 Inputs:
 
@@ -36,12 +40,42 @@ The forecast is multiplied by the gust factor because it is a sustained wind and
 
 `big` means the lower rise line. `all` means the higher rise line.
 
-## Hot day, cold day, thunderstorm
+The Configuration card selectors are **Weather station** and **Forecast**.
 
-Each publishes one binary sensor named **Active**.
+## Temperature
 
-- Hot day is on while the weather temperature is above the threshold.
-- Cold day is on while it is below the threshold.
-- Thunderstorm is on while the weather state is one of the selected conditions.
+One entry for heat and cold. It is separate from Wind.
 
-An automation can require the state to hold for a duration. These signals do not run actions themselves. The existing weather blueprints remain for automations that should run actions directly.
+Inputs:
+
+- Weather entity
+- Hot above, default 90
+- Cold below, default 32
+
+Both thresholds use the weather entity's temperature unit.
+
+Entities on the device:
+
+| Entity name | State | Use |
+|---|---|---|
+| Temperature | number | The current weather temperature |
+| Hot | on / off | On while temperature is above Hot above |
+| Cold | on / off | On while temperature is below Cold below |
+
+The Configuration card selector is **Weather**.
+
+## Bad weather
+
+Inputs:
+
+- Weather entity
+- Conditions, default lightning, lightning-rainy, pouring, and rainy
+
+Entities on the device:
+
+| Entity name | State | Use |
+|---|---|---|
+| Condition | weather state | The current condition, such as `rainy` or `sunny` |
+| Bad weather | on / off | On while Condition is one of the selected states |
+
+The Configuration card selector is **Weather**.

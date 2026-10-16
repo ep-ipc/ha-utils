@@ -13,13 +13,13 @@
   "config_subentries": {
     "wind_signal": {
       "initiate_flow": {
-        "user": "Add wind signal",
-        "reconfigure": "Edit wind signal"
+        "user": "Add wind",
+        "reconfigure": "Edit wind"
       },
-      "entry_type": "Wind signal",
+      "entry_type": "Wind",
       "step": {
         "user": {
-          "title": "Wind signal",
+          "title": "Wind",
           "description": "Reads a gust sensor and a forecast weather entity. Publishes level, risk, calm, and gust factor for automations.",
           "data": {
             "name": "Name",
@@ -35,56 +35,39 @@
         }
       }
     },
-    "hot_day": {
+    "temperature": {
       "initiate_flow": {
-        "user": "Add hot day signal",
-        "reconfigure": "Edit hot day signal"
+        "user": "Add temperature",
+        "reconfigure": "Edit temperature"
       },
-      "entry_type": "Hot day",
+      "entry_type": "Temperature",
       "step": {
         "user": {
-          "title": "Hot day",
-          "description": "Turns on while the weather entity temperature is above the threshold.",
+          "title": "Temperature",
+          "description": "Publishes the weather temperature plus Hot and Cold, which automations can trigger on.",
           "data": {
             "name": "Name",
             "weather_entity": "Weather entity",
-            "threshold": "Temperature threshold"
+            "hot_threshold": "Hot above",
+            "cold_threshold": "Cold below"
           }
         }
       }
     },
-    "cold_day": {
+    "bad_weather": {
       "initiate_flow": {
-        "user": "Add cold day signal",
-        "reconfigure": "Edit cold day signal"
+        "user": "Add bad weather",
+        "reconfigure": "Edit bad weather"
       },
-      "entry_type": "Cold day",
+      "entry_type": "Bad weather",
       "step": {
         "user": {
-          "title": "Cold day",
-          "description": "Turns on while the weather entity temperature is below the threshold.",
+          "title": "Bad weather",
+          "description": "Publishes the weather condition and turns on while that condition is one of the selected states.",
           "data": {
             "name": "Name",
             "weather_entity": "Weather entity",
-            "threshold": "Temperature threshold"
-          }
-        }
-      }
-    },
-    "thunderstorm": {
-      "initiate_flow": {
-        "user": "Add thunderstorm signal",
-        "reconfigure": "Edit thunderstorm signal"
-      },
-      "entry_type": "Thunderstorm",
-      "step": {
-        "user": {
-          "title": "Thunderstorm",
-          "description": "Turns on while the weather entity state is one of the selected conditions.",
-          "data": {
-            "name": "Name",
-            "weather_entity": "Weather entity",
-            "storm_conditions": "Storm conditions"
+            "storm_conditions": "Bad weather conditions"
           }
         }
       }

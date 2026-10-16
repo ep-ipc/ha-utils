@@ -2,30 +2,9 @@
 
 HA Utils deploys blueprints from `bundled/blueprints/` to `/config/blueprints/`. See [Deploy](deploy.md) for the copy rules and folder conventions.
 
-## What this includes
+Weather alerts are not blueprints. Add a [Wind, Temperature, or Bad weather entry](signals.md) and trigger your own automation on the entities it publishes.
 
-### Weather alerts
-
-Location: `bundled/blueprints/automation/ha_utils/` (deployed to `/config/blueprints/automation/ha_utils/`)
-
-Automation blueprints for weather-based alerts. Each uses a `weather` entity as the trigger source and lets you configure thresholds, hold duration, cooldown, and actions.
-
-| Blueprint | Trigger |
-|-----------|---------|
-| HA Utils - High wind alert | `wind_speed` attribute above threshold |
-| HA Utils - Hot day alert | `temperature` attribute above threshold |
-| HA Utils - Cold day alert | `temperature` attribute below threshold |
-| HA Utils - Possible thunderstorm alert | Weather state in storm-like conditions |
-
-Configurable inputs:
-
-- **Weather entity** — must be a `weather` domain entity
-- **Threshold or conditions** — varies by blueprint. For hot/cold day alerts, enter the temperature threshold in the same unit as the weather entity's temperature (your Home Assistant unit system in **Settings → System → General**, or the entity's configured unit). No default threshold is provided.
-- **Hold duration** — how long the condition must remain true
-- **Cooldown** — minimum time between automation runs
-- **Actions** — what to run when triggered
-
-### Control all by device type
+## Control all by device type
 
 Location: `bundled/blueprints/script/ha_utils/` (deployed to `/config/blueprints/script/ha_utils/`)
 
@@ -53,12 +32,20 @@ Bundled source: `custom_components/ha_utils/bundled/blueprints/`
 
 Home Assistant auto-discovers blueprints under `/config/blueprints/`. No extra `configuration.yaml` include is required.
 
+Deploy removes these retired weather-alert blueprints if they are still in `/config`:
+
+- `blueprints/automation/ha_utils/high_wind.yaml`
+- `blueprints/automation/ha_utils/hot_day.yaml`
+- `blueprints/automation/ha_utils/cold_day.yaml`
+- `blueprints/automation/ha_utils/possible_thunderstorm.yaml`
+
+A `.bak` copy is kept when backup is enabled. Automations already created from those blueprints stay in Home Assistant until you delete them. New automations should use the signal entities.
+
 ## How to use
 
 1. Install HA Utils and confirm blueprints are deployed — see [Deploy](deploy.md).
 2. Open **Settings → Automations & scenes → Blueprints**.
-3. Create an automation or script from an HA Utils blueprint.
-4. Configure inputs (and actions, for weather alert automations).
+3. Create a script from the control-all blueprint.
 
 ## Upgrading blueprints
 

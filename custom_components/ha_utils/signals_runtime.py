@@ -215,12 +215,36 @@ class WindSignalRuntime(SignalRuntime):
         self._refresh(now)
 
 
+def async_get_threshold_runtime(
+    hass: HomeAssistant,
+    entry: Any,
+    subentry_id: str,
+    data: dict[str, Any],
+    kind: str,
+) -> ThresholdRuntime:
+    """Return the shared runtime for a temperature or bad-weather entry."""
+
+    runtimes: dict[str, ThresholdRuntime] = hass.data.setdefault(DOMAIN, {}).setdefault(
+        "threshold_runtimes", {}
+    )
+    runtime = runtimes.get(subentry_id)
+    if runtime is None:
+        runtime = ThresholdRuntime(hass, subentry_id, data, kind)
+        runtimes[subentry_id] = runtime
+        entry.async_on_unload(runtime.async_start())
+    return runtime
+
+
 class ThresholdRuntime(SignalRuntime):
-    """On/off signal from one weather entity."""
+    """Temperature and bad-weather state from one weather entity."""
 
     def __init__(self, hass: HomeAssistant, subentry_id: str, data: dict[str, Any], kind: str) -> None:
         super().__init__(hass, subentry_id, data)
         self.kind = kind
+        self.temperature: float | None = None
+        self.condition: str | None = None
+        self.hot = False
+        self.cold = False
         self.is_on = False
 
     def async_start(self) -> Any:
@@ -239,22 +263,28 @@ class ThresholdRuntime(SignalRuntime):
         state = self.hass.states.get(weather)
         self.missing = [] if state is not None else [weather]
         self._set_issue()
-        self.is_on = False if state is None else self._matches(state)
-        self._notify()
-
-    def _matches(self, state: State) -> bool:
-        if self.kind == "thunderstorm":
+        self.condition = None if state is None else state.state
+        raw_temp = None if state is None else state.attributes.get("temperature")
+        self.temperature = float(raw_temp) if isinstance(raw_temp, (int, float)) else None
+        self.hot = False
+        self.cold = False
+        self.is_on = False
+        if state is None:
+            self._notify()
+            return
+        if self.kind == "temperature":
+            hot_line = self.data.get("hot_threshold")
+            cold_line = self.data.get("cold_threshold")
+            if self.temperature is not None and isinstance(hot_line, (int, float)):
+                self.hot = self.temperature > float(hot_line)
+            if self.temperature is not None and isinstance(cold_line, (int, float)):
+                self.cold = self.temperature < float(cold_line)
+        else:
             conditions = self.data.get("storm_conditions") or [
                 "lightning",
                 "lightning-rainy",
                 "pouring",
                 "rainy",
             ]
-            return state.state in conditions
-        temperature = state.attributes.get("temperature")
-        if not isinstance(temperature, (int, float)):
-            return False
-        threshold = float(self.data["threshold"])
-        if self.kind == "hot_day":
-            return float(temperature) > threshold
-        return float(temperature) < threshold
+            self.is_on = state.state in conditions
+        self._notify()

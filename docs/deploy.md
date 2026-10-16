@@ -15,7 +15,7 @@ Examples:
 | Bundled source | Deployed destination |
 |----------------|----------------------|
 | `bundled/themes/ha_utils_font_scale.yaml` | `/config/themes/ha_utils_font_scale.yaml` |
-| `bundled/blueprints/automation/ha_utils/hot_day.yaml` | `/config/blueprints/automation/ha_utils/hot_day.yaml` |
+| `bundled/blueprints/script/ha_utils/control_all_by_domain.yaml` | `/config/blueprints/script/ha_utils/control_all_by_domain.yaml` |
 | `bundled/packages/ha_utils.yaml` | `/config/packages/ha_utils.yaml` |
 | `bundled/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` | `/config/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` |
 
@@ -112,11 +112,6 @@ bundled/
 ├── themes/
 │   └── ha_utils_font_scale.yaml
 ├── blueprints/
-│   ├── automation/ha_utils/
-│   │   ├── cold_day.yaml
-│   │   ├── high_wind.yaml
-│   │   ├── hot_day.yaml
-│   │   └── possible_thunderstorm.yaml
 │   └── script/ha_utils/
 │       └── control_all_by_domain.yaml
 └── packages/
