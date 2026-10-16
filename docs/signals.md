@@ -10,6 +10,8 @@ Signal entries are added under the Home Assistant Utils integration. Each one re
 
 The new device is listed on that same page. Its entities are what automations use.
 
+On the wind device page, the Configuration card has two selectors: **Weather station** (a wind-speed sensor from the station) and **Forecast** (a weather entity). Changing either one switches the sources for that device.
+
 ## Wind signal
 
 Inputs:
