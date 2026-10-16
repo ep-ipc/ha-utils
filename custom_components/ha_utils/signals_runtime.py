@@ -232,6 +232,11 @@ def async_get_threshold_runtime(
         runtime = ThresholdRuntime(hass, subentry_id, data, kind)
         runtimes[subentry_id] = runtime
         entry.async_on_unload(runtime.async_start())
+
+        def _drop() -> None:
+            runtimes.pop(subentry_id, None)
+
+        entry.async_on_unload(_drop)
     return runtime
 
 

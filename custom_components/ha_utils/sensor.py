@@ -30,6 +30,11 @@ async def async_setup_entry(
             runtime = WindSignalRuntime(hass, subentry.subentry_id, dict(subentry.data))
             runtimes[subentry.subentry_id] = runtime
             entry.async_on_unload(runtime.async_start())
+
+            def _drop(subentry_id: str = subentry.subentry_id) -> None:
+                runtimes.pop(subentry_id, None)
+
+            entry.async_on_unload(_drop)
         async_add_entities(
             [
                 WindLevelSensor(runtime, subentry.title),
