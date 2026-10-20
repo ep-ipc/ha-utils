@@ -16,9 +16,9 @@ _TEMPERATURE = (
     ("cold_threshold", "Cold below", 32, "mdi:thermometer-low"),
 )
 _WIND = (
-    ("rise_big", "Rise to big", 30, "mdi:arrow-up-bold"),
-    ("rise_all", "Rise to all", 60, "mdi:arrow-up-bold-outline"),
-    ("fall_all", "Fall from all", 45, "mdi:arrow-down-bold-outline"),
+    ("rise_big", "Rise to advisory", 30, "mdi:arrow-up-bold"),
+    ("rise_all", "Rise to warning", 60, "mdi:arrow-up-bold-outline"),
+    ("fall_all", "Fall from warning", 45, "mdi:arrow-down-bold-outline"),
     ("fall_big", "Fall to safe", 20, "mdi:arrow-down-bold"),
 )
 

@@ -47,7 +47,7 @@ def test_forecast_raises_risk_while_local_gust_is_zero() -> None:
 
     assert snap.station_fresh is True
     assert snap.risk == round(max(0.0, 25.0 * 1.4), 1)
-    assert snap.level == "big"
+    assert snap.level == "advisory"
     assert snap.sample is None
 
 
@@ -58,7 +58,7 @@ def test_local_gust_is_not_lowered_by_a_calm_forecast() -> None:
     snap = item.update(START, 36.0, True)
 
     assert snap.risk == 36.0
-    assert snap.level == "big"
+    assert snap.level == "advisory"
 
 
 def test_stale_forecast_is_left_out() -> None:
@@ -73,10 +73,19 @@ def test_stale_forecast_is_left_out() -> None:
 
 def test_missing_numbers_do_not_unlock() -> None:
     item = engine()
-    item.level = "all"
+    item.level = "warning"
     snap = item.update(START, None, False)
 
-    assert snap.level == "all"
+    assert snap.level == "warning"
+
+
+def test_legacy_level_names_still_latch() -> None:
+    item = engine()
+    item.level = "all"
+    item.set_forecast(START, 10.0, [10.0])
+    item.observe_gust(START, 30.0)
+    snap = item.update(START, 30.0, True)
+    assert snap.level == "advisory"
 
 
 def test_factor_sample_rejects_light_wind_and_blends_slowly() -> None:
@@ -89,15 +98,15 @@ def test_factor_sample_rejects_light_wind_and_blends_slowly() -> None:
 
 def test_level_falls_only_on_the_calm_number() -> None:
     item = engine()
-    item.level = "all"
+    item.level = "warning"
     item.set_forecast(START, 10.0, [10.0])
     item.observe_gust(START, 30.0)
     snap = item.update(START, 30.0, True)
 
     assert snap.calm == 30.0
-    assert snap.level == "big"
+    assert snap.level == "advisory"
 
-    item.level = "big"
+    item.level = "advisory"
     item.hourly = [10.0]
     item.sustained = 10.0
     item.samples = [(START, 10.0)]

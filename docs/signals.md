@@ -31,16 +31,16 @@ Entities on the device:
 
 | Entity name | State | Use |
 |---|---|---|
-| Level | `safe`, `big`, or `all` | The automation trigger |
+| Level | `safe`, `advisory`, or `warning` | The automation trigger |
 | Risk | speed | Raises the level. Higher of the 3-minute local gust and the next 2 hours of scaled forecast. |
 | Calm | speed | Lowers the level. Higher of the 30-minute local gust and the next 1 hour of scaled forecast. |
 | Gust factor | 1.0–3.0 | Learned scale from gust ÷ forecast sustained wind. Starts at the seed. |
 
 The forecast is multiplied by the gust factor because it is a sustained wind and the lines are gust lines. The factor moves once an hour, 80 percent previous and 20 percent new, only when the 30-minute gust is at least 5 and the forecast sustained wind is at least 8. A calm forecast cannot pull a live gust down. If both sources are missing, the level stays where it was.
 
-`big` means the lower rise line. `all` means the higher rise line. Those lines are yours to set. They start at 30 and 60 for rising, and 45 and 20 for falling, in the gust sensor's speed unit.
+`advisory` means the lower rise line. `warning` means the higher rise line. Those lines are yours to set. They start at 30 and 60 for rising, and 45 and 20 for falling, in the gust sensor's speed unit.
 
-The Configuration card has **Weather station**, **Forecast**, **Rise to big**, **Rise to all**, **Fall from all**, and **Fall to safe**.
+The Configuration card has **Weather station**, **Forecast**, **Rise to advisory**, **Rise to warning**, **Fall from warning**, and **Fall to safe**.
 
 ## Temperature
 

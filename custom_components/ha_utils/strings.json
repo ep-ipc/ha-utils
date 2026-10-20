@@ -27,9 +27,9 @@
             "weather_entity": "Forecast weather entity",
             "heartbeat_entity": "Heartbeat sensor",
             "factor_seed": "Starting gust factor",
-            "rise_big": "Rise to big",
-            "rise_all": "Rise to all",
-            "fall_all": "Fall from all",
+            "rise_big": "Rise to advisory",
+            "rise_all": "Rise to warning",
+            "fall_all": "Fall from warning",
             "fall_big": "Fall to safe"
           }
         }

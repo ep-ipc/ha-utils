@@ -10,7 +10,7 @@ Current subentries:
 
 | Type | Device | Publishes |
 |---|---|---|
-| `wind_signal` | Wind | Level (`safe`, `big`, `all`), Risk, Calm, Gust factor |
+| `wind_signal` | Wind | Level (`safe`, `advisory`, `warning`), Risk, Calm, Gust factor |
 | `temperature` | Temperature | Temperature, Hot, Cold |
 | `bad_weather` | Bad weather | Condition, Bad weather, Reason |
 

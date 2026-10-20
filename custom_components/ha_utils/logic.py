@@ -9,7 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
-LEVELS = ("safe", "big", "all")
+LEVELS = ("safe", "advisory", "warning")
+_LEGACY_LEVELS = {"big": "advisory", "all": "warning"}
 FORECAST_STALE = timedelta(hours=3)
 GUST_SHORT = timedelta(minutes=3)
 GUST_LONG = timedelta(minutes=30)
@@ -111,24 +112,26 @@ def latch_level(
     if risk is None and calm is None:
         return previous if previous in LEVELS else "unknown"
 
-    if previous == "all":
+    previous = _LEGACY_LEVELS.get(previous, previous)
+
+    if previous == "warning":
         if calm is not None and calm < options.fall_big:
             return "safe"
         if calm is not None and calm < options.fall_all:
-            return "big"
-        return "all"
+            return "advisory"
+        return "warning"
 
-    if previous == "big":
+    if previous == "advisory":
         if risk is not None and risk >= options.rise_all:
-            return "all"
+            return "warning"
         if calm is not None and calm < options.fall_big:
             return "safe"
-        return "big"
+        return "advisory"
 
     if risk is not None and risk >= options.rise_all:
-        return "all"
+        return "warning"
     if risk is not None and risk >= options.rise_big:
-        return "big"
+        return "advisory"
     return "safe"
 
 
@@ -250,6 +253,7 @@ class WindEngine:
     def import_state(self, raw: dict) -> None:
         self.factor = _clamp_factor(float(raw.get("factor", self.factor)))
         level = raw.get("level", self.level)
+        level = _LEGACY_LEVELS.get(str(level), level)
         self.level = level if level in LEVELS or level == "unknown" else "unknown"
         sustained = raw.get("sustained")
         self.sustained = None if sustained is None else float(sustained)
