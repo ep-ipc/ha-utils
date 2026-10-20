@@ -6,7 +6,7 @@ import json
 import logging
 import shutil
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -95,7 +95,7 @@ def _write_marker(config_dir: Path, result: DeployResult) -> None:
     marker_path = config_dir / MARKER_FILE
     payload: dict[str, object] = {
         "version": BUNDLE_VERSION,
-        "deployed_at": datetime.now(UTC).isoformat(),
+        "deployed_at": datetime.now(timezone.utc).isoformat(),
         "copied": result.copied,
         "updated": result.updated,
         "skipped": result.skipped,

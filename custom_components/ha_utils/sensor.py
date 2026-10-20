@@ -13,6 +13,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, DOCS_DEVICES, STORM_DEFAULT
 from .device_meta import signal_device_info
+from .logic import (
+    bad_weather_guide_attributes,
+    bad_weather_guide_state,
+    temperature_guide_attributes,
+    temperature_guide_state,
+    wind_guide_attributes,
+    wind_guide_state,
+)
 from .signals_runtime import (
     SignalRuntime,
     ThresholdRuntime,
@@ -205,51 +213,19 @@ class WindGuideSensor(SensorEntity):
     @property
     def native_value(self) -> str:
         advisory, warning, fall_warning, fall_safe, unit = self._lines()
-        return (
-            f"↑ safe → advisory ({advisory:g} {unit}) → warning ({warning:g} {unit}) · "
-            f"↓ warning → advisory (<{fall_warning:g} {unit}) → safe (<{fall_safe:g} {unit})"
-        )
+        return wind_guide_state(advisory, warning, fall_warning, fall_safe, unit)
 
     @property
     def extra_state_attributes(self) -> dict:
         advisory, warning, fall_warning, fall_safe, unit = self._lines()
-        return {
-            "how_to_use": (
-                "Watch Level in your own automation, or use the device triggers "
-                "(Level became safe / advisory / warning). "
-                "Risk raises the latch; Calm lowers it. Reason says why. "
-                "advisory_expected_at and warning_expected_at on Level give the first forecast hour "
-                "that reaches each rise line. "
-                "Set Weather station, Weather forecast, and the four speeds under Configuration. "
-                "Missing Risk or Calm never counts as calm."
-            ),
-            "rules": (
-                "Fall to safe < Rise to advisory < Rise to warning, and "
-                "Fall to safe < Fall from warning < Rise to warning. "
-                "Speeds use the gust sensor's unit; the forecast is converted to it."
-            ),
-            "rise": (
-                f"safe → advisory when Risk ≥ {advisory:g} {unit} → "
-                f"warning when Risk ≥ {warning:g} {unit}"
-            ),
-            "fall": (
-                f"warning → advisory when Calm < {fall_warning:g} {unit} → "
-                f"safe when Calm < {fall_safe:g} {unit}"
-            ),
-            "rise_to_advisory": (
-                f"When Risk reaches {advisory:g} {unit}, Level becomes advisory."
-            ),
-            "rise_to_warning": (
-                f"When Risk reaches {warning:g} {unit}, Level becomes warning."
-            ),
-            "fall_from_warning": (
-                f"When Calm falls below {fall_warning:g} {unit}, Level leaves warning for advisory."
-            ),
-            "fall_to_safe": (
-                f"When Calm falls below {fall_safe:g} {unit}, Level becomes safe."
-            ),
-            "docs": f"{DOCS_DEVICES}/wind.md",
-        }
+        return wind_guide_attributes(
+            advisory,
+            warning,
+            fall_warning,
+            fall_safe,
+            unit,
+            docs=f"{DOCS_DEVICES}/wind.md",
+        )
 
 
 class TemperatureReadingSensor(SensorEntity):
@@ -312,25 +288,15 @@ class TemperatureGuideSensor(SensorEntity):
     def native_value(self) -> str:
         hot = _line(self.runtime.data, "hot_threshold", 90)
         cold = _line(self.runtime.data, "cold_threshold", 32)
-        return f"Cold below {cold:g} · Hot above {hot:g}"
+        return temperature_guide_state(hot, cold)
 
     @property
     def extra_state_attributes(self) -> dict:
         hot = _line(self.runtime.data, "hot_threshold", 90)
         cold = _line(self.runtime.data, "cold_threshold", 32)
-        margin = self.runtime.margin()
-        return {
-            "summary": (
-                "Live station temperature is preferred when fresh. "
-                "Forecast high/low next 2 hours can turn Hot or Cold on early. "
-                "Reason says why; hot_expected_at and cold_expected_at on Hot and Cold "
-                "give the first forecast hour past each line."
-            ),
-            "hot_above": f"Hot turns on above {hot:g} and clears at {hot - margin:g} or cooler.",
-            "cold_below": f"Cold turns on below {cold:g} and clears at {cold + margin:g} or warmer.",
-            "rules": "Cold below must be lower than Hot above. Station readings are converted to the forecast unit.",
-            "docs": f"{DOCS_DEVICES}/temperature.md",
-        }
+        return temperature_guide_attributes(
+            hot, cold, margin=self.runtime.margin(), docs=f"{DOCS_DEVICES}/temperature.md"
+        )
 
 
 class WeatherConditionSensor(SensorEntity):
@@ -405,22 +371,13 @@ class BadWeatherGuideSensor(SensorEntity):
 
     @property
     def native_value(self) -> str:
-        return "Station rain or forecast storm → On"
+        return bad_weather_guide_state()
 
     @property
     def extra_state_attributes(self) -> dict:
         conditions = self.runtime.data.get("storm_conditions") or STORM_DEFAULT
-        hold = self.runtime.hold().total_seconds() / 60
-        return {
-            "summary": (
-                "Bad weather turns on for live station rain or a matching forecast "
-                "condition in the next 2 hours, then stays on for Hold for minutes after "
-                "the last one. Condition can stay sunny while On. "
-                "A rain total counts as rain while it rose in the last 30 minutes; "
-                "a rain rate counts while it is above 0."
-            ),
-            "hold_minutes": hold,
-            "conditions": conditions,
-            "reason": "Read the Reason sensor for the current sentence.",
-            "docs": f"{DOCS_DEVICES}/bad-weather.md",
-        }
+        return bad_weather_guide_attributes(
+            list(conditions),
+            hold_minutes=self.runtime.hold().total_seconds() / 60,
+            docs=f"{DOCS_DEVICES}/bad-weather.md",
+        )

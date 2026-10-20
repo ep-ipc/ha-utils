@@ -42,7 +42,7 @@ Weather alerts are signal devices, not blueprints. The only bundled blueprint is
 - Hot and Cold clear only past the clear margin. Bad weather stays on for its hold after the last hit.
 - A station with no report for 2 hours raises the `signal_source_stale` repair.
 
-Math that does not need Home Assistant belongs in `logic.py`. Test it from `tests/test_signals.py`.
+Math that does not need Home Assistant belongs in `logic.py`. Test it from `tests/test_signals.py`. Config/docs/bundled contracts live in `tests/test_contracts.py`. Deploy and voice helpers live in `tests/test_theme_pack.py`. Run `make test` and `make test-ha` before releasing.
 
 ## Home Assistant wiring
 

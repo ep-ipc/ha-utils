@@ -254,3 +254,31 @@ def test_voice_helper_targets_selected_or_all_entities() -> None:
         "light.kitchen"
     ]
     assert voice._target_entity_ids(hass, None) == ["light.kitchen", "switch.fan"]
+    assert voice._unique(["a", "b", "a"]) == ["a", "b"]
+    assert voice.DEFAULT_ASSISTANTS == ("conversation",)
+    assert "cloud.alexa" in voice.KNOWN_ASSISTANTS
+    assert "cloud.google_assistant" in voice.KNOWN_ASSISTANTS
+
+
+def test_deploy_writes_marker_file(tmp_path: Path) -> None:
+    deploy = load_ha_utils_module("deploy")
+    hass = types.SimpleNamespace(
+        config=types.SimpleNamespace(config_dir=str(tmp_path))
+    )
+    result = deploy.deploy_bundled_assets(hass)
+    marker = tmp_path / ".ha_utils_deployed"
+    assert marker.is_file()
+    payload = json.loads(marker.read_text(encoding="utf-8"))
+    assert payload["copied"] == result.copied
+    assert "deployed_at" in payload
+    assert payload["version"] == load_ha_utils_module("const").BUNDLE_VERSION
+
+
+def test_services_yaml_documents_deploy_bundled() -> None:
+    text = (
+        REPO / "custom_components" / "ha_utils" / "services.yaml"
+    ).read_text(encoding="utf-8")
+    assert text.startswith("deploy_bundled:")
+    assert "overwrite_existing" in text
+    assert "backup_existing" in text
+    assert "expose_entities_to_voice_assistant" in text
