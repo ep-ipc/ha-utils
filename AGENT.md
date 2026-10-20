@@ -10,11 +10,11 @@ Current subentries:
 
 | Type | Device | Doc | Publishes |
 |---|---|---|---|
-| `wind_signal` | Wind | [docs/devices/wind.md](docs/devices/wind.md) | Level (`safe`, `advisory`, `warning`), Risk, Calm, Gust factor, Guide |
-| `temperature` | Temperature | [docs/devices/temperature.md](docs/devices/temperature.md) | Temperature, Hot, Cold, Guide |
+| `wind_signal` | Wind | [docs/devices/wind.md](docs/devices/wind.md) | Level (`safe`, `advisory`, `warning`), Risk, Calm, Gust factor, Reason, Guide |
+| `temperature` | Temperature | [docs/devices/temperature.md](docs/devices/temperature.md) | Temperature, Hot, Cold, Reason, Guide |
 | `bad_weather` | Bad weather | [docs/devices/bad-weather.md](docs/devices/bad-weather.md) | Condition, Bad weather, Reason, Guide |
 
-Wind is a generic wind reading. Do not name it for shades or any other device. Wind rise and fall lines are the user's thresholds, default 30 / 60 / 45 / 20 in the gust sensor's speed unit. Hot and cold default to 90 and 32. Bad weather conditions default to lightning, lightning-rainy, pouring, and rainy.
+Wind is a generic wind reading. Do not name it for shades or any other device. Wind rise and fall lines are the user's thresholds in the gust sensor's speed unit. New entries start at 30 / 60 / 45 / 20 mph, converted to km/h on metric installs (and to the gust sensor's unit when the user keeps them). Hot and cold start at 90 / 32 °F or 32 / 0 °C, with a clear margin of 2 °F or 1 °C. Bad weather conditions default to lightning, lightning-rainy, pouring, and rainy (`STORM_DEFAULT` in `const.py`), with a 30-minute hold. Starting values live in `logic.py`.
 
 Weather alerts are signal devices, not blueprints. The only bundled blueprint is the control-all script.
 
@@ -35,7 +35,12 @@ Weather alerts are signal devices, not blueprints. The only bundled blueprint is
 - If the station is missing, use the forecast. Temperature and Bad weather may set the station to `none`.
 - Do not list a signal's own entities in its source selectors.
 - Wind Level strings are `safe` / `advisory` / `warning`. Map legacy stored `big` → `advisory` and `all` → `warning` on import.
-- When Bad weather's decision changes, set the Reason entity to one readable sentence and write that sentence to the activity log with `async_log_entry`. The state-change row will still say that no cause was recorded.
+- Every signal has a Reason entity with one readable sentence. When a main entity changes (Level, Hot, Cold, Bad weather), write that sentence to the activity log with `async_log_entry` against that entity. Do not log every new number. The state-change row will still say that no cause was recorded.
+- Wind converts forecast speeds to the gust sensor's unit. Temperature converts the station to the forecast's unit.
+- A rain total counts as rain only while it rose in the last 30 minutes. A rain rate counts while above 0.
+- Lines must keep their order (`line_error` in `logic.py`). The flow and the number entities both reject bad orders.
+- Hot and Cold clear only past the clear margin. Bad weather stays on for its hold after the last hit.
+- A station with no report for 2 hours raises the `signal_source_stale` repair.
 
 Math that does not need Home Assistant belongs in `logic.py`. Test it from `tests/test_signals.py`.
 
@@ -46,7 +51,15 @@ Math that does not need Home Assistant belongs in `logic.py`. Test it from `test
 - Changing a source or a threshold updates the subentry and reloads the entry. Drop the cached runtime on unload so the next setup reads the new data.
 - Bus listeners that write state must be `@callback` and stay on the event loop. `async_call_later` callbacks that touch `hass` must be `@callback` too.
 - Source lists update after entities appear. Do not snapshot options only at startup.
-- Entities use `has_entity_name` and the subentry device. Stable `unique_id` values are `{subentry_id}_{key}`.
+- Entities use `has_entity_name` and the subentry device. Stable `unique_id` values are `{subentry_id}_{key}`. Device triggers in `device_trigger.py` find entities by that suffix.
+- Runtimes check `_stopped` after every await so an unload during startup leaves no listeners.
+- Signals that share a weather entity share one `get_forecasts` call (`async_hourly_forecast`).
+- Custom integrations load labels from `translations/en.json`, not `strings.json`. Keep the two identical; `tests_ha` checks it.
+
+## Tests
+
+- `make test` runs the pure tests in `tests/` with no Home Assistant install.
+- `make test-ha` runs `tests_ha/` inside a real Home Assistant. Set it up once with `python3.13 -m venv .venv && .venv/bin/pip install -r requirements_test.txt`.
 
 ## Releases
 

@@ -10,13 +10,25 @@ Generic wind risk signal. Not tied to shades or any other device. Reads a live g
 | Risk | sensor | speed | Raises Level |
 | Calm | sensor | speed | Lowers Level |
 | Gust factor | sensor | 1.0–3.0 | Scales forecast sustained wind toward gust lines |
+| Reason | sensor | sentence | Why Level is where it is; written to the activity log when Level changes |
 | Guide | diagnostic | rise and fall ladders | How to use Wind and what each Configuration speed means |
 | Weather station | config | gust entity id | Local lane source |
 | Weather forecast | config | weather entity id | Forecast lane source |
-| Rise to advisory | config | speed, default 30 | Risk ≥ this → `advisory` |
-| Rise to warning | config | speed, default 60 | Risk ≥ this → `warning` |
-| Fall from warning | config | speed, default 45 | Calm &lt; this leaves `warning` for `advisory` |
-| Fall to safe | config | speed, default 20 | Calm &lt; this → `safe` |
+| Rise to advisory | config | speed, default 30 mph / 48 km/h | Risk ≥ this → `advisory` |
+| Rise to warning | config | speed, default 60 mph / 97 km/h | Risk ≥ this → `warning` |
+| Fall from warning | config | speed, default 45 mph / 72 km/h | Calm &lt; this leaves `warning` for `advisory` |
+| Fall to safe | config | speed, default 20 mph / 32 km/h | Calm &lt; this → `safe` |
+
+Level also carries `advisory_expected_at` and `warning_expected_at`: the first forecast hour (next 24 hours) whose scaled wind reaches each rise line, or empty.
+
+## Units and lines
+
+All speeds use the gust sensor's unit. The forecast's `wind_speed_unit` is converted to it. New entries start from mph lines on US installs and km/h lines on metric ones. If you keep the starting lines and the gust sensor uses another unit (for example m/s), they are converted to that unit when you save.
+
+The lines must keep their order, or the form and the device page refuse the change:
+
+- Fall to safe &lt; Rise to advisory &lt; Rise to warning
+- Fall to safe &lt; Fall from warning &lt; Rise to warning
 
 Open the device page to change Configuration. **Guide** (Diagnostics) shows the current rise and fall ladders with your numbers, plus a short how-to. Dashboards can link to this device page so people can open Guide without hunting for it.
 
@@ -47,13 +59,13 @@ Starts at `1.4` (ordinary open-air gust ÷ sustained ≈ 1.3–1.5). Each accept
 
 ## Lanes
 
-- **Local.** Gust sensor, heartbeat optional (defaults to the gust entity). Fresh for 15 minutes after the last heartbeat report.
-- **Forecast.** `weather.get_forecasts` hourly, refreshed about every 15 minutes. Stale after 3 hours.
+- **Local.** Gust sensor, heartbeat optional (defaults to the gust entity). Fresh for 15 minutes after the last heartbeat report, re-checked every minute. No report for 2 hours raises a repair.
+- **Forecast.** `weather.get_forecasts` hourly, refreshed about every 15 minutes. Hours that have ended are left out. Stale after 3 hours.
 - **Both missing.** Level stays where it was.
 
 ## Automations
 
-Trigger on Level, for example:
+In the automation editor, pick the Wind device and a trigger: **Level became safe**, **Level became advisory**, or **Level became warning**. Or trigger on Level yourself:
 
 ```yaml
 trigger:
@@ -70,3 +82,5 @@ action:
 ```
 
 Hold times and actions stay in your automation. This device only publishes the signal.
+
+Use Reason in notifications: `{{ states('sensor.YOUR_WIND_REASON') }}`.

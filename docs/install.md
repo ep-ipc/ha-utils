@@ -65,5 +65,6 @@ Required for bundled [scripts](scripts.md).
 ## Local development
 
 ```bash
-make test
+make test      # pure tests, no Home Assistant needed
+make test-ha   # inside Home Assistant; see AGENT.md for the one-time .venv setup
 ```

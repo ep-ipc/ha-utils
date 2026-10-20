@@ -31,5 +31,6 @@ Setup refreshes bundled themes, packages, and the script blueprint. See [Deploy]
 Development rules are in [AGENT.md](AGENT.md).
 
 ```bash
-make test
+make test      # pure tests, no Home Assistant needed
+make test-ha   # inside Home Assistant; see AGENT.md for the one-time .venv setup
 ```

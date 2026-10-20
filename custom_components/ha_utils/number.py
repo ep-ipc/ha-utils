@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .device_meta import signal_device_info
+from .logic import HOLD_MINUTES, LINE_ERRORS, default_margin, line_error
 
 _TEMPERATURE = (
     ("hot_threshold", "Hot above", 90, "mdi:thermometer-high"),
@@ -47,6 +50,41 @@ async def async_setup_entry(
                         maximum=150,
                     )
                     for key, name, default, icon in _TEMPERATURE
+                ]
+                + [
+                    ThresholdNumber(
+                        entry.entry_id,
+                        subentry,
+                        key="clear_margin",
+                        name="Clear margin",
+                        default=default_margin(_weather_unit(hass, subentry)),
+                        icon="mdi:arrow-collapse-vertical",
+                        model="Temperature",
+                        doc="temperature",
+                        unit_kind="temperature",
+                        minimum=0,
+                        maximum=20,
+                        step=0.5,
+                    )
+                ],
+                config_subentry_id=subentry.subentry_id,
+            )
+        elif subentry.subentry_type == "bad_weather":
+            async_add_entities(
+                [
+                    ThresholdNumber(
+                        entry.entry_id,
+                        subentry,
+                        key="hold_minutes",
+                        name="Hold for",
+                        default=HOLD_MINUTES,
+                        icon="mdi:timer-sand",
+                        model="Bad weather",
+                        doc="bad-weather",
+                        unit_kind="minutes",
+                        minimum=0,
+                        maximum=240,
+                    )
                 ],
                 config_subentry_id=subentry.subentry_id,
             )
@@ -72,6 +110,13 @@ async def async_setup_entry(
             )
 
 
+def _weather_unit(hass: HomeAssistant, subentry: ConfigSubentry) -> str | None:
+    weather_id = subentry.data.get("weather_entity")
+    weather = None if not isinstance(weather_id, str) else hass.states.get(weather_id)
+    unit = None if weather is None else weather.attributes.get("temperature_unit")
+    return str(unit) if unit else None
+
+
 class ThresholdNumber(NumberEntity):
     """A line the user can change on the device page."""
 
@@ -95,6 +140,7 @@ class ThresholdNumber(NumberEntity):
         unit_kind: str,
         minimum: float,
         maximum: float,
+        step: float = 1,
     ) -> None:
         self.entry_id = entry_id
         self.subentry_id = subentry.subentry_id
@@ -106,6 +152,7 @@ class ThresholdNumber(NumberEntity):
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
         self._attr_native_min_value = minimum
         self._attr_native_max_value = maximum
+        self._attr_native_step = step
         self._attr_device_info = signal_device_info(
             subentry.subentry_id, subentry.title, model, doc
         )
@@ -129,6 +176,8 @@ class ThresholdNumber(NumberEntity):
         subentry = self._subentry()
         if subentry is None:
             return None
+        if self._unit_kind == "minutes":
+            return UnitOfTime.MINUTES
         if self._unit_kind == "wind":
             gust_id = subentry.data.get("gust_entity")
             gust = None if not isinstance(gust_id, str) else self.hass.states.get(gust_id)
@@ -151,5 +200,8 @@ class ThresholdNumber(NumberEntity):
             return
         data = dict(subentry.data)
         data[self.key] = float(value)
+        error = line_error(data)
+        if error is not None:
+            raise ServiceValidationError(LINE_ERRORS[error])
         self.hass.config_entries.async_update_subentry(entry, subentry, data=data)
         self.async_write_ha_state()

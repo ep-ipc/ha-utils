@@ -12,37 +12,83 @@ from homeassistant.config_entries import (
     ConfigFlow,
     ConfigSubentryFlow,
 )
+from homeassistant.const import UnitOfSpeed, UnitOfTemperature
+from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
+from homeassistant.util.unit_conversion import SpeedConverter, TemperatureConverter
 
-from .const import DOMAIN, NAME
-
-_STORM_DEFAULT = ["lightning", "lightning-rainy", "pouring", "rainy"]
-_STORM_OPTIONS = [
-    "lightning",
-    "lightning-rainy",
-    "pouring",
-    "rainy",
-    "hail",
-    "windy",
-    "windy-variant",
-]
+from .const import DOMAIN, NAME, STORM_DEFAULT, STORM_OPTIONS
+from .logic import (
+    HOLD_MINUTES,
+    TEMPERATURE_LINES_F,
+    WIND_LINES_MPH,
+    default_margin,
+    line_error,
+)
 
 
-def _sensor_selector() -> selector.EntitySelector:
-    return selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
+def _speed_unit(hass: HomeAssistant) -> str:
+    """Wind sensors and weather entities show km/h on metric installs, mph otherwise."""
+
+    if hass.config.units.temperature_unit == UnitOfTemperature.CELSIUS:
+        return UnitOfSpeed.KILOMETERS_PER_HOUR
+    return UnitOfSpeed.MILES_PER_HOUR
 
 
-def _weather_selector() -> selector.EntitySelector:
-    return selector.EntitySelector(selector.EntitySelectorConfig(domain="weather"))
+def _wind_lines(unit: str) -> dict[str, float]:
+    try:
+        return {
+            key: float(round(SpeedConverter.convert(value, UnitOfSpeed.MILES_PER_HOUR, unit)))
+            for key, value in WIND_LINES_MPH.items()
+        }
+    except HomeAssistantError:
+        return dict(WIND_LINES_MPH)
 
 
-def _mph_selector(default: float) -> selector.NumberSelector:
+def _default_lines(hass: HomeAssistant) -> dict[str, float]:
+    """Starting lines in the house unit system."""
+
+    temperature_unit = hass.config.units.temperature_unit
+    lines = _wind_lines(_speed_unit(hass))
+    for key, value in TEMPERATURE_LINES_F.items():
+        lines[key] = float(
+            round(TemperatureConverter.convert(value, UnitOfTemperature.FAHRENHEIT, temperature_unit))
+        )
+    lines["clear_margin"] = default_margin(temperature_unit)
+    lines["hold_minutes"] = HOLD_MINUTES
+    return lines
+
+
+def _entity_selector(
+    domain: str | list[str], device_class: str | list[str] | None = None
+) -> selector.EntitySelector:
+    config: dict[str, Any] = {"domain": domain}
+    if device_class is not None:
+        config["device_class"] = device_class
+    return selector.EntitySelector(selector.EntitySelectorConfig(**config))
+
+
+def _number_selector(minimum: float, maximum: float, step: float = 1) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
-            min=0, max=150, step=1, mode=selector.NumberSelectorMode.BOX
+            min=minimum, max=maximum, step=step, mode=selector.NumberSelectorMode.BOX
         )
     )
+
+
+def _entity_field(fields: dict[Any, Any], key: str, defaults: dict[str, Any], required: bool, value: Any) -> None:
+    """Required fields carry their default; optional ones only suggest it so they can be cleared."""
+
+    current = defaults.get(key)
+    if required:
+        marker: Any = vol.Required(key, default=current) if current else vol.Required(key)
+    elif current:
+        marker = vol.Optional(key, description={"suggested_value": current})
+    else:
+        marker = vol.Optional(key)
+    fields[marker] = value
 
 
 class HaUtilsConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -77,15 +123,48 @@ class HaUtilsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class _NamedSubentryFlow(ConfigSubentryFlow):
-    """Shared name handling for signal subentries."""
+    """Shared name, defaults, and line checks for signal subentries."""
 
-    def _title_and_data(self, user_input: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-        data = dict(user_input)
-        title = str(data.pop("name"))
-        return title, data
+    default_name = ""
+    optional_entity = ""
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        return await self.async_step_user(user_input)
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            user_input = dict(user_input)
+            if self.optional_entity and not user_input.get(self.optional_entity):
+                user_input.pop(self.optional_entity, None)
+            self._before_save(user_input)
+            error = line_error(user_input)
+            if error is None:
+                return self._finish(user_input)
+            errors["base"] = error
+        defaults = self._defaults(user_input)
+        return self.async_show_form(
+            step_id="user", data_schema=vol.Schema(self._fields(defaults)), errors=errors
+        )
+
+    def _before_save(self, user_input: dict[str, Any]) -> None:
+        return None
+
+    def _fields(self, defaults: dict[str, Any]) -> dict[Any, Any]:
+        raise NotImplementedError
+
+    def _defaults(self, user_input: dict[str, Any] | None) -> dict[str, Any]:
+        defaults: dict[str, Any] = {"name": self.default_name, **_default_lines(self.hass)}
+        if self.source == SOURCE_RECONFIGURE:
+            current = self._get_reconfigure_subentry()
+            defaults.update({"name": current.title, **dict(current.data)})
+        if user_input:
+            defaults.update(user_input)
+        return defaults
 
     def _finish(self, user_input: dict[str, Any]):
-        title, data = self._title_and_data(user_input)
+        data = dict(user_input)
+        title = str(data.pop("name"))
         if self.source == SOURCE_RECONFIGURE:
             return self.async_update_and_abort(
                 self._get_entry(),
@@ -97,144 +176,68 @@ class _NamedSubentryFlow(ConfigSubentryFlow):
 
 
 class WindSignalSubentryFlow(_NamedSubentryFlow):
-    """Collect the gust sensor, forecast, and shade-style thresholds."""
+    """Collect the gust sensor, forecast, and rise and fall lines."""
 
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
-        return await self.async_step_user(user_input)
+    default_name = "Wind"
+    optional_entity = "heartbeat_entity"
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            if not user_input.get("heartbeat_entity"):
-                user_input.pop("heartbeat_entity", None)
-            return self._finish(user_input)
-
-        defaults: dict[str, Any] = {}
+    def _before_save(self, user_input: dict[str, Any]) -> None:
+        # Untouched starting lines follow the gust sensor's own unit.
         if self.source == SOURCE_RECONFIGURE:
-            current = self._get_reconfigure_subentry()
-            defaults = {"name": current.title, **dict(current.data)}
+            return
+        shown = _wind_lines(_speed_unit(self.hass))
+        if any(user_input.get(key) != value for key, value in shown.items()):
+            return
+        gust = self.hass.states.get(str(user_input.get("gust_entity", "")))
+        unit = None if gust is None else gust.attributes.get("unit_of_measurement")
+        if unit and unit != _speed_unit(self.hass):
+            user_input.update(_wind_lines(str(unit)))
 
-        fields: dict[Any, Any] = {
-            vol.Required("name", default=defaults.get("name", "Wind")): str,
-        }
-        if defaults.get("gust_entity"):
-            fields[vol.Required("gust_entity", default=defaults["gust_entity"])] = _sensor_selector()
-        else:
-            fields[vol.Required("gust_entity")] = _sensor_selector()
-        if defaults.get("weather_entity"):
-            fields[vol.Required("weather_entity", default=defaults["weather_entity"])] = _weather_selector()
-        else:
-            fields[vol.Required("weather_entity")] = _weather_selector()
-        heartbeat_key: Any
-        if defaults.get("heartbeat_entity"):
-            heartbeat_key = vol.Optional(
-                "heartbeat_entity",
-                description={"suggested_value": defaults["heartbeat_entity"]},
-            )
-        else:
-            heartbeat_key = vol.Optional("heartbeat_entity")
-        fields[heartbeat_key] = _sensor_selector()
-        fields.update(
-            {
-                vol.Required("factor_seed", default=defaults.get("factor_seed", 1.4)): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=1, max=3, step=0.05, mode=selector.NumberSelectorMode.BOX
-                    )
-                ),
-                vol.Required("rise_big", default=defaults.get("rise_big", 30)): _mph_selector(30),
-                vol.Required("rise_all", default=defaults.get("rise_all", 60)): _mph_selector(60),
-                vol.Required("fall_all", default=defaults.get("fall_all", 45)): _mph_selector(45),
-                vol.Required("fall_big", default=defaults.get("fall_big", 20)): _mph_selector(20),
-            }
-        )
-        schema = vol.Schema(fields)
-        return self.async_show_form(step_id="user", data_schema=schema)
+    def _fields(self, defaults: dict[str, Any]) -> dict[Any, Any]:
+        fields: dict[Any, Any] = {vol.Required("name", default=defaults["name"]): str}
+        _entity_field(fields, "gust_entity", defaults, True, _entity_selector("sensor", "wind_speed"))
+        _entity_field(fields, "weather_entity", defaults, True, _entity_selector("weather"))
+        _entity_field(fields, "heartbeat_entity", defaults, False, _entity_selector("sensor"))
+        fields[vol.Required("factor_seed", default=defaults.get("factor_seed", 1.4))] = _number_selector(1, 3, 0.05)
+        for key in ("rise_big", "rise_all", "fall_all", "fall_big"):
+            fields[vol.Required(key, default=defaults[key])] = _number_selector(0, 150)
+        return fields
 
 
 class TemperatureSubentryFlow(_NamedSubentryFlow):
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
-        return await self.async_step_user(user_input)
+    default_name = "Temperature"
+    optional_entity = "station_entity"
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            if not user_input.get("station_entity"):
-                user_input.pop("station_entity", None)
-            return self._finish(user_input)
-        defaults: dict[str, Any] = {}
-        if self.source == SOURCE_RECONFIGURE:
-            current = self._get_reconfigure_subentry()
-            defaults = {"name": current.title, **dict(current.data)}
-        weather_key: Any = vol.Required("weather_entity")
-        if defaults.get("weather_entity"):
-            weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
-        station_key: Any = vol.Optional("station_entity")
-        if defaults.get("station_entity"):
-            station_key = vol.Optional(
-                "station_entity",
-                description={"suggested_value": defaults["station_entity"]},
-            )
-        schema = vol.Schema(
-            {
-                vol.Required("name", default=defaults.get("name", "Temperature")): str,
-                station_key: _sensor_selector(),
-                weather_key: _weather_selector(),
-                vol.Required(
-                    "hot_threshold", default=defaults.get("hot_threshold", 90)
-                ): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=-50, max=150, step=1, mode=selector.NumberSelectorMode.BOX
-                    )
-                ),
-                vol.Required(
-                    "cold_threshold", default=defaults.get("cold_threshold", 32)
-                ): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=-50, max=150, step=1, mode=selector.NumberSelectorMode.BOX
-                    )
-                ),
-            }
-        )
-        return self.async_show_form(step_id="user", data_schema=schema)
+    def _fields(self, defaults: dict[str, Any]) -> dict[Any, Any]:
+        fields: dict[Any, Any] = {vol.Required("name", default=defaults["name"]): str}
+        _entity_field(fields, "station_entity", defaults, False, _entity_selector("sensor", "temperature"))
+        _entity_field(fields, "weather_entity", defaults, True, _entity_selector("weather"))
+        fields[vol.Required("hot_threshold", default=defaults["hot_threshold"])] = _number_selector(-50, 150)
+        fields[vol.Required("cold_threshold", default=defaults["cold_threshold"])] = _number_selector(-50, 150)
+        fields[vol.Required("clear_margin", default=defaults["clear_margin"])] = _number_selector(0, 20, 0.5)
+        return fields
 
 
 class BadWeatherSubentryFlow(_NamedSubentryFlow):
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
-        return await self.async_step_user(user_input)
+    default_name = "Bad weather"
+    optional_entity = "station_entity"
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        if user_input is not None:
-            if not user_input.get("station_entity"):
-                user_input.pop("station_entity", None)
-            return self._finish(user_input)
-        defaults: dict[str, Any] = {}
-        if self.source == SOURCE_RECONFIGURE:
-            current = self._get_reconfigure_subentry()
-            defaults = {"name": current.title, **dict(current.data)}
-        weather_key: Any = vol.Required("weather_entity")
-        if defaults.get("weather_entity"):
-            weather_key = vol.Required("weather_entity", default=defaults["weather_entity"])
-        station_key: Any = vol.Optional("station_entity")
-        if defaults.get("station_entity"):
-            station_key = vol.Optional(
-                "station_entity",
-                description={"suggested_value": defaults["station_entity"]},
-            )
-        schema = vol.Schema(
-            {
-                vol.Required("name", default=defaults.get("name", "Bad weather")): str,
-                station_key: selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain=["binary_sensor", "sensor"])
-                ),
-                weather_key: _weather_selector(),
-                vol.Required(
-                    "storm_conditions",
-                    default=defaults.get("storm_conditions", _STORM_DEFAULT),
-                ): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=_STORM_OPTIONS,
-                        multiple=True,
-                        custom_value=True,
-                    )
-                ),
-            }
+    def _fields(self, defaults: dict[str, Any]) -> dict[Any, Any]:
+        fields: dict[Any, Any] = {vol.Required("name", default=defaults["name"]): str}
+        _entity_field(
+            fields,
+            "station_entity",
+            defaults,
+            False,
+            _entity_selector(
+                ["binary_sensor", "sensor"], ["moisture", "precipitation", "precipitation_intensity"]
+            ),
         )
-        return self.async_show_form(step_id="user", data_schema=schema)
+        _entity_field(fields, "weather_entity", defaults, True, _entity_selector("weather"))
+        fields[
+            vol.Required("storm_conditions", default=defaults.get("storm_conditions", STORM_DEFAULT))
+        ] = selector.SelectSelector(
+            selector.SelectSelectorConfig(options=STORM_OPTIONS, multiple=True, custom_value=True)
+        )
+        fields[vol.Required("hold_minutes", default=defaults["hold_minutes"])] = _number_selector(0, 240)
+        return fields

@@ -1,0 +1,112 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Assistant Utils",
+        "description": "Install HA Utils and deploy bundled resources such as themes, packages, and blueprints into your Home Assistant config directory."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Home Assistant Utils is already configured."
+    }
+  },
+  "config_subentries": {
+    "wind_signal": {
+      "initiate_flow": {
+        "user": "Add wind",
+        "reconfigure": "Edit wind"
+      },
+      "entry_type": "Wind",
+      "step": {
+        "user": {
+          "title": "Wind",
+          "description": "Reads a gust sensor and a forecast weather entity. Publishes Level (safe / advisory / warning), Risk, Calm, Gust factor, and Reason. Speeds use the gust sensor's unit; the forecast is converted to it. Fall to safe must be below Rise to advisory, and Fall from warning below Rise to warning.",
+          "data": {
+            "name": "Name",
+            "gust_entity": "Gust sensor",
+            "weather_entity": "Forecast weather entity",
+            "heartbeat_entity": "Heartbeat sensor",
+            "factor_seed": "Starting gust factor",
+            "rise_big": "Rise to advisory",
+            "rise_all": "Rise to warning",
+            "fall_all": "Fall from warning",
+            "fall_big": "Fall to safe"
+          }
+        }
+      },
+      "error": {
+        "rise_order": "Rise to warning must be above Rise to advisory.",
+        "fall_order": "Fall from warning must be above Fall to safe.",
+        "advisory_gap": "Fall to safe must be below Rise to advisory.",
+        "warning_gap": "Fall from warning must be below Rise to warning."
+      }
+    },
+    "temperature": {
+      "initiate_flow": {
+        "user": "Add temperature",
+        "reconfigure": "Edit temperature"
+      },
+      "entry_type": "Temperature",
+      "step": {
+        "user": {
+          "title": "Temperature",
+          "description": "Merges an optional live temperature sensor with the forecast. Hot and Cold use your lines in the forecast's unit (starting at 90 / 32 °F or 32 / 0 °C). Once on, they clear only after moving Clear margin back past the line.",
+          "data": {
+            "name": "Name",
+            "station_entity": "Weather station",
+            "weather_entity": "Weather forecast",
+            "hot_threshold": "Hot above",
+            "cold_threshold": "Cold below",
+            "clear_margin": "Clear margin"
+          }
+        }
+      },
+      "error": {
+        "temperature_order": "Hot above must be higher than Cold below."
+      }
+    },
+    "bad_weather": {
+      "initiate_flow": {
+        "user": "Add bad weather",
+        "reconfigure": "Edit bad weather"
+      },
+      "entry_type": "Bad weather",
+      "step": {
+        "user": {
+          "title": "Bad weather",
+          "description": "Merges an optional live rain sensor with the forecast. Turns on when either one reports bad weather and stays on for Hold for minutes after. A rain total counts while it rose in the last 30 minutes; a rain rate counts while above 0.",
+          "data": {
+            "name": "Name",
+            "station_entity": "Weather station",
+            "weather_entity": "Weather forecast",
+            "storm_conditions": "Bad weather conditions",
+            "hold_minutes": "Hold for (minutes)"
+          }
+        }
+      }
+    }
+  },
+  "issues": {
+    "signal_source_missing": {
+      "title": "Weather signal is missing a source",
+      "description": "This signal needs {entities}. It stays unavailable until those entities exist again."
+    },
+    "signal_source_stale": {
+      "title": "Weather signal source stopped reporting",
+      "description": "{entities} has not reported for {hours} hours. The signal falls back to the forecast until it reports again. Check the device's battery or connection."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "level_safe": "{entity_name} became safe",
+      "level_advisory": "{entity_name} became advisory",
+      "level_warning": "{entity_name} became warning",
+      "hot_on": "{entity_name} turned on",
+      "hot_off": "{entity_name} turned off",
+      "cold_on": "{entity_name} turned on",
+      "cold_off": "{entity_name} turned off",
+      "bad_weather_on": "{entity_name} turned on",
+      "bad_weather_off": "{entity_name} turned off"
+    }
+  }
+}

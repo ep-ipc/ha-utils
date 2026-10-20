@@ -23,5 +23,13 @@ The device page Configuration card holds sources and thresholds. Each device als
 
 - Prefer a fresh local station (15 minutes). Forecast is fallback and early warning.
 - Forecast may turn a signal on. It must not clear a live station reading that is still past the line.
-- Forecast look-ahead is about 2 hours.
+- Forecast look-ahead is about 2 hours. Signals also publish the first forecast hour (up to 24 hours ahead) that would cross a line, as `*_expected_at` attributes.
+- Forecast values are converted to the station's unit (Wind) or the station to the forecast's unit (Temperature).
+- Starting lines follow your unit system (mph and °F, or km/h and °C).
+- Rise and fall lines must keep their order. The setup form and the device page reject lines that would make a signal flap or stick.
+- Each device has a **Reason** sensor. When the main entity changes (Level, Hot, Cold, Bad weather), its Reason sentence goes to the activity log.
+- Each device offers **device triggers** (for example *Level became warning*, *Hot turned on*) in the automation editor.
+- Freshness is re-checked every minute. A station that has not reported for 2 hours raises a repair under **Settings → System → Repairs**.
+- Signals that share a weather entity share one forecast request.
+- **Download diagnostics** on the integration includes each signal's sources and the numbers behind its state.
 - Changing a configuration entity reloads that signal.
