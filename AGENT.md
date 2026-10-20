@@ -24,6 +24,7 @@ Weather alerts are signal devices, not blueprints. The only bundled blueprint is
 - Overview stays in `docs/signals.md` and `docs/devices/README.md`.
 - Device docs use the same section order: **What it publishes**, **How it decides / Level moves**, **Automations**.
 - Every signal device exposes a diagnostic **Guide** entity and a `configuration_url` pointing at its doc (`DOCS_DEVICES` in `const.py`).
+- Wind Guide must show both rise and fall ladders with the live threshold numbers, plus a short how-to for watching Level in automations. Keep house-specific shade mapping on the house dashboard, not in the integration Guide.
 - When you change thresholds, levels, merge rules, or published entities, update the device doc and Guide text in the same change.
 
 ## Signal rules

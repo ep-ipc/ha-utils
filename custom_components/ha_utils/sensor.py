@@ -145,7 +145,7 @@ class WindNumberSensor(_WindSensor):
 
 
 class WindGuideSensor(SensorEntity):
-    """Short ladder shown on the Wind device page."""
+    """How to use Wind, shown on the device diagnostics card."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -162,24 +162,43 @@ class WindGuideSensor(SensorEntity):
         await super().async_added_to_hass()
         self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
 
-    @property
-    def native_value(self) -> str:
+    def _lines(self) -> tuple[float, float, float, float, str]:
         data = self.runtime.data
         unit = self.runtime.unit
-        advisory = _line(data, "rise_big", 30)
-        warning = _line(data, "rise_all", 60)
-        return f"safe → advisory ({advisory:g} {unit}) → warning ({warning:g} {unit})"
+        return (
+            _line(data, "rise_big", 30),
+            _line(data, "rise_all", 60),
+            _line(data, "fall_all", 45),
+            _line(data, "fall_big", 20),
+            unit,
+        )
+
+    @property
+    def native_value(self) -> str:
+        advisory, warning, fall_warning, fall_safe, unit = self._lines()
+        return (
+            f"↑ safe → advisory ({advisory:g} {unit}) → warning ({warning:g} {unit}) · "
+            f"↓ warning → advisory (<{fall_warning:g} {unit}) → safe (<{fall_safe:g} {unit})"
+        )
 
     @property
     def extra_state_attributes(self) -> dict:
-        data = self.runtime.data
-        unit = self.runtime.unit
-        advisory = _line(data, "rise_big", 30)
-        warning = _line(data, "rise_all", 60)
-        fall_warning = _line(data, "fall_all", 45)
-        fall_safe = _line(data, "fall_big", 20)
+        advisory, warning, fall_warning, fall_safe, unit = self._lines()
         return {
-            "summary": "Risk raises Level. Calm lowers Level. Missing numbers never count as calm.",
+            "how_to_use": (
+                "Watch Level in your own automation. "
+                "Risk raises the latch; Calm lowers it. "
+                "Set Weather station, Forecast, and the four speeds under Configuration. "
+                "Missing Risk or Calm never counts as calm."
+            ),
+            "rise": (
+                f"safe → advisory when Risk ≥ {advisory:g} {unit} → "
+                f"warning when Risk ≥ {warning:g} {unit}"
+            ),
+            "fall": (
+                f"warning → advisory when Calm < {fall_warning:g} {unit} → "
+                f"safe when Calm < {fall_safe:g} {unit}"
+            ),
             "rise_to_advisory": (
                 f"When Risk reaches {advisory:g} {unit}, Level becomes advisory."
             ),
