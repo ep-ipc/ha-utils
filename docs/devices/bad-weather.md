@@ -11,7 +11,7 @@ On/off storm and rain signal from an optional live rain sensor and a forecast we
 | Reason | sensor | sentence | Why it is on or off; also written to the activity log when it changes |
 | Guide | diagnostic | short summary | How sources and conditions work |
 | Weather station | config | rain sensor or `none` | Live source (moisture / precipitation) |
-| Forecast | config | weather entity id | Forecast source |
+| Weather forecast | config | weather entity id | Forecast source |
 
 Default bad conditions: `lightning`, `lightning-rainy`, `pouring`, `rainy`. Edit them in the subentry reconfigure flow under Home Assistant Utils.
 

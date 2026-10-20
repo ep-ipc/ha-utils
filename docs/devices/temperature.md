@@ -11,7 +11,7 @@ Heat and cold signal from an optional live temperature sensor and a forecast wea
 | Cold | binary | on / off | Automation trigger for cold |
 | Guide | diagnostic | short summary | How to set the Configuration values |
 | Weather station | config | temperature sensor or `none` | Live source |
-| Forecast | config | weather entity id | Forecast source |
+| Weather forecast | config | weather entity id | Forecast source |
 | Hot above | config | temperature, default 90 | Hot turns on above this |
 | Cold below | config | temperature, default 32 | Cold turns on below this |
 

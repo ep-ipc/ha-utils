@@ -188,7 +188,7 @@ class WindGuideSensor(SensorEntity):
             "how_to_use": (
                 "Watch Level in your own automation. "
                 "Risk raises the latch; Calm lowers it. "
-                "Set Weather station, Forecast, and the four speeds under Configuration. "
+                "Set Weather station, Weather forecast, and the four speeds under Configuration. "
                 "Missing Risk or Calm never counts as calm."
             ),
             "rise": (

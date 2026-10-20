@@ -48,7 +48,7 @@
           "data": {
             "name": "Name",
             "station_entity": "Weather station",
-            "weather_entity": "Forecast",
+            "weather_entity": "Weather forecast",
             "hot_threshold": "Hot above",
             "cold_threshold": "Cold below"
           }
@@ -68,7 +68,7 @@
           "data": {
             "name": "Name",
             "station_entity": "Weather station",
-            "weather_entity": "Forecast",
+            "weather_entity": "Weather forecast",
             "storm_conditions": "Bad weather conditions"
           }
         }

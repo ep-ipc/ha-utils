@@ -12,7 +12,7 @@ Generic wind risk signal. Not tied to shades or any other device. Reads a live g
 | Gust factor | sensor | 1.0–3.0 | Scales forecast sustained wind toward gust lines |
 | Guide | diagnostic | rise and fall ladders | How to use Wind and what each Configuration speed means |
 | Weather station | config | gust entity id | Local lane source |
-| Forecast | config | weather entity id | Forecast lane source |
+| Weather forecast | config | weather entity id | Forecast lane source |
 | Rise to advisory | config | speed, default 30 | Risk ≥ this → `advisory` |
 | Rise to warning | config | speed, default 60 | Risk ≥ this → `warning` |
 | Fall from warning | config | speed, default 45 | Calm &lt; this leaves `warning` for `advisory` |
