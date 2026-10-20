@@ -37,7 +37,7 @@ Weather alerts are signal devices, not blueprints. The only bundled blueprint is
 - Wind Level strings are `safe` / `advisory` / `warning`. Map legacy stored `big` → `advisory` and `all` → `warning` on import.
 - When Bad weather's decision changes, set the Reason entity to one readable sentence and write that sentence to the activity log with `async_log_entry`. The state-change row will still say that no cause was recorded.
 
-Math that does not need Home Assistant belongs in `logic.py`. Test it from `tests/test_signals.py`.
+Math that does not need Home Assistant belongs in `logic.py`. Test it from `tests/test_signals.py`. Config/docs/bundled contracts live in `tests/test_contracts.py`. Deploy and voice helpers live in `tests/test_theme_pack.py`. Run `make test` before releasing.
 
 ## Home Assistant wiring
 

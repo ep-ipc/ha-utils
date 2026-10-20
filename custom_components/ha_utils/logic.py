@@ -360,3 +360,105 @@ def _parse_stamp(value: object) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
     return datetime.fromisoformat(value)
+
+
+def wind_guide_state(
+    advisory: float,
+    warning: float,
+    fall_warning: float,
+    fall_safe: float,
+    unit: str,
+) -> str:
+    """One-line rise and fall ladders for the Wind Guide entity."""
+
+    return (
+        f"↑ safe → advisory ({advisory:g} {unit}) → warning ({warning:g} {unit}) · "
+        f"↓ warning → advisory (<{fall_warning:g} {unit}) → safe (<{fall_safe:g} {unit})"
+    )
+
+
+def wind_guide_attributes(
+    advisory: float,
+    warning: float,
+    fall_warning: float,
+    fall_safe: float,
+    unit: str,
+    *,
+    docs: str,
+) -> dict[str, str]:
+    """Attribute text for the Wind Guide entity."""
+
+    return {
+        "how_to_use": (
+            "Watch Level in your own automation. "
+            "Risk raises the latch; Calm lowers it. "
+            "Set Weather station, Weather forecast, and the four speeds under Configuration. "
+            "Missing Risk or Calm never counts as calm."
+        ),
+        "rise": (
+            f"safe → advisory when Risk ≥ {advisory:g} {unit} → "
+            f"warning when Risk ≥ {warning:g} {unit}"
+        ),
+        "fall": (
+            f"warning → advisory when Calm < {fall_warning:g} {unit} → "
+            f"safe when Calm < {fall_safe:g} {unit}"
+        ),
+        "rise_to_advisory": (
+            f"When Risk reaches {advisory:g} {unit}, Level becomes advisory."
+        ),
+        "rise_to_warning": (
+            f"When Risk reaches {warning:g} {unit}, Level becomes warning."
+        ),
+        "fall_from_warning": (
+            f"When Calm falls below {fall_warning:g} {unit}, "
+            "Level leaves warning for advisory."
+        ),
+        "fall_to_safe": (
+            f"When Calm falls below {fall_safe:g} {unit}, Level becomes safe."
+        ),
+        "docs": docs,
+    }
+
+
+def temperature_guide_state(hot: float, cold: float) -> str:
+    """One-line Hot/Cold summary for the Temperature Guide entity."""
+
+    return f"Cold below {cold:g} · Hot above {hot:g}"
+
+
+def temperature_guide_attributes(hot: float, cold: float, *, docs: str) -> dict[str, str]:
+    """Attribute text for the Temperature Guide entity."""
+
+    return {
+        "summary": (
+            "Live station temperature is preferred when fresh. "
+            "Forecast high/low next 2 hours can turn Hot or Cold on early."
+        ),
+        "hot_above": f"Hot turns on above {hot:g}.",
+        "cold_below": f"Cold turns on below {cold:g}.",
+        "docs": docs,
+    }
+
+
+def bad_weather_guide_state() -> str:
+    """One-line summary for the Bad weather Guide entity."""
+
+    return "Station rain or forecast storm → On"
+
+
+def bad_weather_guide_attributes(
+    conditions: list[str],
+    *,
+    docs: str,
+) -> dict[str, object]:
+    """Attribute text for the Bad weather Guide entity."""
+
+    return {
+        "summary": (
+            "Bad weather turns on for live station rain or a matching forecast "
+            "condition in the next 2 hours. Condition can stay sunny while On."
+        ),
+        "conditions": conditions,
+        "reason": "Read the Reason sensor for the current sentence.",
+        "docs": docs,
+    }
