@@ -27,15 +27,6 @@ class DeployResult:
     skipped: list[str] = field(default_factory=list)
     backed_up: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
-    removed: list[str] = field(default_factory=list)
-
-
-_RETIRED = (
-    "blueprints/automation/ha_utils/cold_day.yaml",
-    "blueprints/automation/ha_utils/high_wind.yaml",
-    "blueprints/automation/ha_utils/hot_day.yaml",
-    "blueprints/automation/ha_utils/possible_thunderstorm.yaml",
-)
 
 
 def _bundled_root() -> Path:
@@ -96,23 +87,6 @@ def deploy_bundled_assets(
             result.errors.append(msg)
             _LOGGER.error("Failed to deploy %s: %s", rel_str, err)
 
-    for rel_str in _RETIRED:
-        dest = config_dir / rel_str
-        if not dest.is_file():
-            continue
-        try:
-            if backup_existing:
-                backup = dest.with_name(f"{dest.name}.bak")
-                shutil.copy2(dest, backup)
-                result.backed_up.append(str(backup.relative_to(config_dir)))
-            dest.unlink()
-            result.removed.append(rel_str)
-            _LOGGER.info("Removed retired bundled resource: %s", rel_str)
-        except OSError as err:
-            msg = f"{rel_str}: {err}"
-            result.errors.append(msg)
-            _LOGGER.error("Failed to remove %s: %s", rel_str, err)
-
     _write_marker(config_dir, result)
     return result
 
@@ -126,7 +100,6 @@ def _write_marker(config_dir: Path, result: DeployResult) -> None:
         "updated": result.updated,
         "skipped": result.skipped,
         "backed_up": result.backed_up,
-        "removed": result.removed,
     }
 
     try:

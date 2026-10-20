@@ -24,7 +24,7 @@ Full doc index: [docs/README.md](docs/README.md)
 4. Under that integration, add **Wind**, **Temperature**, or **Bad weather**. Trigger your own automations on the entities those devices publish. See [Signals](docs/signals.md).
 5. Themes, the expose-all script, and the control-all blueprint are copied into `/config` on setup. See [Install](docs/install.md).
 
-Setup refreshes bundled files and removes the retired weather-alert blueprints. See [Deploy](docs/deploy.md).
+Setup refreshes bundled themes, packages, and the script blueprint. See [Deploy](docs/deploy.md).
 
 ## Local development
 

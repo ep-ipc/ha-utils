@@ -231,24 +231,6 @@ def test_deploy_can_overwrite_existing_files_with_backup(tmp_path: Path) -> None
     ) == "user edited old blueprint\n"
 
 
-def test_deploy_removes_retired_weather_blueprints(tmp_path: Path) -> None:
-    deploy_bundled_assets = load_ha_utils_module("deploy").deploy_bundled_assets
-    hass = types.SimpleNamespace(
-        config=types.SimpleNamespace(config_dir=str(tmp_path))
-    )
-    retired = tmp_path / "blueprints" / "automation" / "ha_utils" / "hot_day.yaml"
-    retired.parent.mkdir(parents=True)
-    retired.write_text("old weather blueprint\n", encoding="utf-8")
-
-    result = deploy_bundled_assets(hass)
-
-    assert "blueprints/automation/ha_utils/hot_day.yaml" in result.removed
-    assert not retired.exists()
-    assert retired.with_name("hot_day.yaml.bak").read_text(encoding="utf-8") == (
-        "old weather blueprint\n"
-    )
-
-
 def test_bundled_package_exposes_all_entities_via_script() -> None:
     package = PACKAGE_FILE.read_text(encoding="utf-8")
     script = EXPOSE_ALL_SCRIPT_FILE.read_text(encoding="utf-8")

@@ -19,7 +19,7 @@ Examples:
 | `bundled/packages/ha_utils.yaml` | `/config/packages/ha_utils.yaml` |
 | `bundled/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` | `/config/packages/ha_utils/scripts/expose_all_to_voice_assistant.yaml` |
 
-There is no per-resource deploy logic. Every file under `bundled/` is walked recursively and copied to the same relative path under `/config`.
+Every file under `bundled/` is walked recursively and copied to the same relative path under `/config`.
 
 ## When deploy runs
 
@@ -36,24 +36,12 @@ There is no per-resource deploy logic. Every file under `bundled/` is walked rec
 | Destination exists, `overwrite_existing: true` (default), content differs | Optional `.bak` backup, then replace → logged as `updated` |
 | Destination exists, `overwrite_existing: false` | Keep existing file → logged as `skipped` |
 | Source and destination identical | Skip even when overwrite is enabled |
-| Retired weather-alert blueprint still in `/config` | `.bak` backup when backup is enabled, then delete → logged as `removed` |
 
-Retired paths:
-
-- `blueprints/automation/ha_utils/high_wind.yaml`
-- `blueprints/automation/ha_utils/hot_day.yaml`
-- `blueprints/automation/ha_utils/cold_day.yaml`
-- `blueprints/automation/ha_utils/possible_thunderstorm.yaml`
-
-Those alerts are [signal entries](signals.md) now. An automation that still points at one of those blueprint files stops loading until you replace it with a normal automation that triggers on the signal entities.
-
-After each run, a marker file is written to `/config/.ha_utils_deployed` with version, timestamp, and deploy results, including `removed`.
+After each run, a marker file is written to `/config/.ha_utils_deployed` with version, timestamp, and deploy results.
 
 ## Manual deploy
 
 Run **Developer tools → Actions → `ha_utils.deploy_bundled`**.
-
-Fields:
 
 | Field | Default | Purpose |
 |-------|---------|---------|
@@ -69,11 +57,7 @@ After upgrading HA Utils in HACS:
 3. Keep `overwrite_existing: true` (default).
 4. Keep `backup_existing: true` unless you do not want `.bak` files.
 
-This refreshes bundled files and removes the retired weather-alert blueprints.
-
 ## Folder conventions
-
-Use these patterns when adding new bundled resources.
 
 ### 1. Top-level folder = HA config folder name
 
@@ -85,32 +69,25 @@ bundled/packages/     → /config/packages/
 
 ### 2. Namespace under `ha_utils/`
 
-Group project content so it does not clash with user files:
-
 ```
 bundled/blueprints/script/ha_utils/       # script blueprint namespace
 bundled/packages/ha_utils/                # package sub-resources
 bundled/packages/ha_utils/scripts/        # scripts
-bundled/packages/ha_utils/automations/    # future
 ```
 
 ### 3. One package entry file at `packages/` root
-
-Home Assistant loads only top-level `packages/*.yaml` files. Subfolders are wired with `!include`:
 
 ```yaml
 # packages/ha_utils.yaml
 script: !include ha_utils/scripts/expose_all_to_voice_assistant.yaml
 ```
 
-After deploy, includes resolve relative to `/config/packages/ha_utils.yaml`.
-
 ### 4. Blueprints vs packages
 
 | Type | Bundled path | Purpose |
 |------|--------------|---------|
 | Blueprint | `bundled/blueprints/<domain>/ha_utils/` | Template users create from the UI |
-| Package | `bundled/packages/ha_utils/` | Ready-to-use entities (scripts, automations) |
+| Package | `bundled/packages/ha_utils/` | Ready-to-use entities (scripts) |
 
 Blueprints are auto-discovered from `/config/blueprints/`. Packages require the `homeassistant.packages` include — see [Install](install.md).
 
@@ -133,12 +110,12 @@ bundled/
 ## Limitations
 
 - Deploy does **not** edit `configuration.yaml`. You must add theme and package includes yourself.
-- Deploy removes only the retired weather-alert blueprints listed above. Other files that leave the bundle stay in `/config` until you delete them.
-- Existing files are updated on deploy by default. Set `overwrite_existing: false` if you want a copy-if-missing run. Retired blueprints are still removed.
+- Deploy does **not** delete files that left the bundle. Remove stale files from `/config` yourself if needed.
+- Existing files are updated on deploy by default. Set `overwrite_existing: false` for copy-if-missing.
 
 ## Adding a new bundled script
 
 1. Add `bundled/packages/ha_utils/scripts/my_script.yaml`.
-2. Reference it from `bundled/packages/ha_utils.yaml` (or use `!include_dir_merge_named`).
+2. Reference it from `bundled/packages/ha_utils.yaml`.
 3. Run deploy (or reinstall the integration).
 4. Reload scripts or restart Home Assistant.

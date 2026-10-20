@@ -16,7 +16,7 @@ Current subentries:
 
 Wind is a generic wind reading. Do not name it for shades or any other device. Wind rise and fall lines are the user's thresholds, default 30 / 60 / 45 / 20 in the gust sensor's speed unit. Hot and cold default to 90 and 32. Bad weather conditions default to lightning, lightning-rainy, pouring, and rainy.
 
-Weather alerts are not blueprints. The only bundled blueprint is the control-all script. Deploy deletes the retired `high_wind`, `hot_day`, `cold_day`, and `possible_thunderstorm` blueprint files.
+Weather alerts are signal devices, not blueprints. The only bundled blueprint is the control-all script.
 
 ## Documentation standard
 

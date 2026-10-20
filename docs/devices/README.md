@@ -1,6 +1,6 @@
 # Signal devices
 
-HA Utils publishes optional signal devices under one integration entry. Each device reads weather sources and publishes entities your own automations can trigger on. Devices do not run actions, move covers, or call scenes.
+HA Utils publishes optional signal devices under one integration entry. Each device reads weather sources and publishes entities your own automations can trigger on. Devices do not run actions.
 
 ## Devices
 

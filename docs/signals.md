@@ -1,6 +1,6 @@
 # Signals
 
-Signal devices live under **Home Assistant Utils**. Each one reads weather sources and publishes entities your automations can trigger on. The calculation stays inside the device. There are no separate helpers, and these entries do not run actions.
+Signal devices live under **Home Assistant Utils**. Each one reads weather sources and publishes entities your automations can trigger on. The calculation stays inside the device. These entries do not run actions.
 
 ## Device docs
 
