@@ -5,11 +5,10 @@ from __future__ import annotations
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .device_meta import signal_device_info
 
 _TEMPERATURE = (
     ("hot_threshold", "Hot above", 90, "mdi:thermometer-high"),
@@ -42,6 +41,7 @@ async def async_setup_entry(
                         default=default,
                         icon=icon,
                         model="Temperature",
+                        doc="temperature",
                         unit_kind="temperature",
                         minimum=-50,
                         maximum=150,
@@ -61,6 +61,7 @@ async def async_setup_entry(
                         default=default,
                         icon=icon,
                         model="Wind",
+                        doc="wind",
                         unit_kind="wind",
                         minimum=0,
                         maximum=150,
@@ -90,6 +91,7 @@ class ThresholdNumber(NumberEntity):
         default: float,
         icon: str,
         model: str,
+        doc: str,
         unit_kind: str,
         minimum: float,
         maximum: float,
@@ -104,11 +106,8 @@ class ThresholdNumber(NumberEntity):
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
         self._attr_native_min_value = minimum
         self._attr_native_max_value = maximum
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, subentry.subentry_id)},
-            name=subentry.title,
-            manufacturer="HA Utils",
-            model=model,
+        self._attr_device_info = signal_device_info(
+            subentry.subentry_id, subentry.title, model, doc
         )
 
     def _subentry(self) -> ConfigSubentry | None:

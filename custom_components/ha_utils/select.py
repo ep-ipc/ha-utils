@@ -8,13 +8,13 @@ from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 
 from .const import DOMAIN
+from .device_meta import signal_device_info
 
 
 async def async_setup_entry(
@@ -34,6 +34,7 @@ async def async_setup_entry(
                     name="Weather station",
                     icon="mdi:weather-windy",
                     model="Wind",
+                    doc="wind",
                     choices="wind",
                 ),
                 SourceSelect(
@@ -43,6 +44,7 @@ async def async_setup_entry(
                     name="Forecast",
                     icon="mdi:weather-partly-cloudy",
                     model="Wind",
+                    doc="wind",
                     choices="weather",
                 ),
             ]
@@ -55,6 +57,7 @@ async def async_setup_entry(
                     name="Weather station",
                     icon="mdi:thermometer",
                     model="Temperature",
+                    doc="temperature",
                     choices="temperature",
                     allow_none=True,
                 ),
@@ -65,6 +68,7 @@ async def async_setup_entry(
                     name="Forecast",
                     icon="mdi:weather-partly-cloudy",
                     model="Temperature",
+                    doc="temperature",
                     choices="weather",
                 ),
             ]
@@ -77,6 +81,7 @@ async def async_setup_entry(
                     name="Weather station",
                     icon="mdi:weather-rainy",
                     model="Bad weather",
+                    doc="bad-weather",
                     choices="rain",
                     allow_none=True,
                 ),
@@ -87,6 +92,7 @@ async def async_setup_entry(
                     name="Forecast",
                     icon="mdi:weather-partly-cloudy",
                     model="Bad weather",
+                    doc="bad-weather",
                     choices="weather",
                 ),
             ]
@@ -120,6 +126,7 @@ class SourceSelect(SelectEntity):
         name: str,
         icon: str,
         model: str,
+        doc: str,
         choices: str,
         allow_none: bool = False,
     ) -> None:
@@ -131,11 +138,8 @@ class SourceSelect(SelectEntity):
         self._attr_name = name
         self._attr_icon = icon
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, subentry.subentry_id)},
-            name=subentry.title,
-            manufacturer="HA Utils",
-            model=model,
+        self._attr_device_info = signal_device_info(
+            subentry.subentry_id, subentry.title, model, doc
         )
 
     async def async_added_to_hass(self) -> None:

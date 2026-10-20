@@ -6,10 +6,9 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass, Bina
 from homeassistant.components.logbook import async_log_entry
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .device_meta import signal_device_info
 from .signals_runtime import ThresholdRuntime, async_get_threshold_runtime
 
 
@@ -59,13 +58,14 @@ class ThresholdBinarySensor(BinarySensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"{runtime.subentry_id}_{key}"
         self._attr_device_class = device_class
-        model = "Temperature" if runtime.kind == "temperature" else "Bad weather"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, runtime.subentry_id)},
-            name=title,
-            manufacturer="HA Utils",
-            model=model,
-        )
+        if runtime.kind == "temperature":
+            self._attr_device_info = signal_device_info(
+                runtime.subentry_id, title, "Temperature", "temperature"
+            )
+        else:
+            self._attr_device_info = signal_device_info(
+                runtime.subentry_id, title, "Bad weather", "bad-weather"
+            )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

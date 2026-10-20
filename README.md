@@ -10,6 +10,7 @@ HACS custom integration for reusable Home Assistant pieces: wind, temperature, a
 | [Scripts](docs/scripts.md) | Bundled package scripts (expose-all to voice assistant) |
 | [Blueprints](docs/blueprints.md) | Bundled script blueprint |
 | [Signals](docs/signals.md) | Optional wind, temperature, and bad weather entries for your own automations |
+| [Devices](docs/devices/README.md) | Per-device docs (Wind, Temperature, Bad weather) |
 | [Install](docs/install.md) | HACS setup, integration install, required `configuration.yaml` includes |
 | [Deploy](docs/deploy.md) | How bundled files map to `/config`, copy policy, and upgrade workflow |
 

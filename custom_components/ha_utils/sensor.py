@@ -5,10 +5,11 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, DOCS_DEVICES
+from .device_meta import signal_device_info
 from .signals_runtime import ThresholdRuntime, WindSignalRuntime, async_get_threshold_runtime
 
 _RUNTIMES = "runtimes"
@@ -19,9 +20,11 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Create sensors for each wind signal subentry."""
+    """Create sensors for each signal subentry."""
 
-    runtimes: dict[str, WindSignalRuntime] = hass.data.setdefault(DOMAIN, {}).setdefault(_RUNTIMES, {})
+    runtimes: dict[str, WindSignalRuntime] = hass.data.setdefault(DOMAIN, {}).setdefault(
+        _RUNTIMES, {}
+    )
     for subentry in entry.subentries.values():
         if subentry.subentry_type != "wind_signal":
             continue
@@ -41,6 +44,7 @@ async def async_setup_entry(
                 WindNumberSensor(runtime, subentry.title, "risk", "Risk", SensorDeviceClass.WIND_SPEED),
                 WindNumberSensor(runtime, subentry.title, "calm", "Calm", SensorDeviceClass.WIND_SPEED),
                 WindNumberSensor(runtime, subentry.title, "factor", "Gust factor", None),
+                WindGuideSensor(runtime, subentry.title),
             ],
             config_subentry_id=subentry.subentry_id,
         )
@@ -50,7 +54,10 @@ async def async_setup_entry(
                 hass, entry, subentry.subentry_id, dict(subentry.data), "temperature"
             )
             async_add_entities(
-                [TemperatureReadingSensor(runtime, subentry.title)],
+                [
+                    TemperatureReadingSensor(runtime, subentry.title),
+                    TemperatureGuideSensor(runtime, subentry.title),
+                ],
                 config_subentry_id=subentry.subentry_id,
             )
         elif subentry.subentry_type == "bad_weather":
@@ -61,18 +68,15 @@ async def async_setup_entry(
                 [
                     WeatherConditionSensor(runtime, subentry.title),
                     WeatherReasonSensor(runtime, subentry.title),
+                    BadWeatherGuideSensor(runtime, subentry.title),
                 ],
                 config_subentry_id=subentry.subentry_id,
             )
 
 
-def _device(subentry_id: str, title: str, model: str) -> DeviceInfo:
-    return DeviceInfo(
-        identifiers={(DOMAIN, subentry_id)},
-        name=title,
-        manufacturer="HA Utils",
-        model=model,
-    )
+def _line(data: dict, key: str, default: float) -> float:
+    value = data.get(key, default)
+    return float(value) if isinstance(value, (int, float)) else default
 
 
 class _WindSensor(SensorEntity):
@@ -83,7 +87,7 @@ class _WindSensor(SensorEntity):
         self.runtime = runtime
         self._attr_name = name
         self._attr_unique_id = f"{runtime.subentry_id}_{key}"
-        self._attr_device_info = _device(runtime.subentry_id, title, "Wind")
+        self._attr_device_info = signal_device_info(runtime.subentry_id, title, "Wind", "wind")
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -140,6 +144,58 @@ class WindNumberSensor(_WindSensor):
         return snap.factor
 
 
+class WindGuideSensor(SensorEntity):
+    """Short ladder shown on the Wind device page."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Guide"
+    _attr_icon = "mdi:information-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, runtime: WindSignalRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_guide"
+        self._attr_device_info = signal_device_info(runtime.subentry_id, title, "Wind", "wind")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> str:
+        data = self.runtime.data
+        unit = self.runtime.unit
+        advisory = _line(data, "rise_big", 30)
+        warning = _line(data, "rise_all", 60)
+        return f"safe → advisory ({advisory:g} {unit}) → warning ({warning:g} {unit})"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self.runtime.data
+        unit = self.runtime.unit
+        advisory = _line(data, "rise_big", 30)
+        warning = _line(data, "rise_all", 60)
+        fall_warning = _line(data, "fall_all", 45)
+        fall_safe = _line(data, "fall_big", 20)
+        return {
+            "summary": "Risk raises Level. Calm lowers Level. Missing numbers never count as calm.",
+            "rise_to_advisory": (
+                f"When Risk reaches {advisory:g} {unit}, Level becomes advisory."
+            ),
+            "rise_to_warning": (
+                f"When Risk reaches {warning:g} {unit}, Level becomes warning."
+            ),
+            "fall_from_warning": (
+                f"When Calm falls below {fall_warning:g} {unit}, Level leaves warning for advisory."
+            ),
+            "fall_to_safe": (
+                f"When Calm falls below {fall_safe:g} {unit}, Level becomes safe."
+            ),
+            "docs": f"{DOCS_DEVICES}/wind.md",
+        }
+
+
 class TemperatureReadingSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -150,7 +206,9 @@ class TemperatureReadingSensor(SensorEntity):
     def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
         self.runtime = runtime
         self._attr_unique_id = f"{runtime.subentry_id}_temperature"
-        self._attr_device_info = _device(runtime.subentry_id, title, "Temperature")
+        self._attr_device_info = signal_device_info(
+            runtime.subentry_id, title, "Temperature", "temperature"
+        )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -179,6 +237,45 @@ class TemperatureReadingSensor(SensorEntity):
         return str(unit) if unit else None
 
 
+class TemperatureGuideSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Guide"
+    _attr_icon = "mdi:information-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_guide"
+        self._attr_device_info = signal_device_info(
+            runtime.subentry_id, title, "Temperature", "temperature"
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> str:
+        hot = _line(self.runtime.data, "hot_threshold", 90)
+        cold = _line(self.runtime.data, "cold_threshold", 32)
+        return f"Cold below {cold:g} · Hot above {hot:g}"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        hot = _line(self.runtime.data, "hot_threshold", 90)
+        cold = _line(self.runtime.data, "cold_threshold", 32)
+        return {
+            "summary": (
+                "Live station temperature is preferred when fresh. "
+                "Forecast high/low next 2 hours can turn Hot or Cold on early."
+            ),
+            "hot_above": f"Hot turns on above {hot:g}.",
+            "cold_below": f"Cold turns on below {cold:g}.",
+            "docs": f"{DOCS_DEVICES}/temperature.md",
+        }
+
+
 class WeatherConditionSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -188,7 +285,9 @@ class WeatherConditionSensor(SensorEntity):
     def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
         self.runtime = runtime
         self._attr_unique_id = f"{runtime.subentry_id}_condition"
-        self._attr_device_info = _device(runtime.subentry_id, title, "Bad weather")
+        self._attr_device_info = signal_device_info(
+            runtime.subentry_id, title, "Bad weather", "bad-weather"
+        )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -216,7 +315,9 @@ class WeatherReasonSensor(SensorEntity):
     def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
         self.runtime = runtime
         self._attr_unique_id = f"{runtime.subentry_id}_reason"
-        self._attr_device_info = _device(runtime.subentry_id, title, "Bad weather")
+        self._attr_device_info = signal_device_info(
+            runtime.subentry_id, title, "Bad weather", "bad-weather"
+        )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -225,3 +326,44 @@ class WeatherReasonSensor(SensorEntity):
     @property
     def native_value(self) -> str | None:
         return self.runtime.reason or None
+
+
+class BadWeatherGuideSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Guide"
+    _attr_icon = "mdi:information-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, runtime: ThresholdRuntime, title: str) -> None:
+        self.runtime = runtime
+        self._attr_unique_id = f"{runtime.subentry_id}_guide"
+        self._attr_device_info = signal_device_info(
+            runtime.subentry_id, title, "Bad weather", "bad-weather"
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.runtime.listen(self.async_write_ha_state))
+
+    @property
+    def native_value(self) -> str:
+        return "Station rain or forecast storm → On"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        conditions = self.runtime.data.get("storm_conditions") or [
+            "lightning",
+            "lightning-rainy",
+            "pouring",
+            "rainy",
+        ]
+        return {
+            "summary": (
+                "Bad weather turns on for live station rain or a matching forecast "
+                "condition in the next 2 hours. Condition can stay sunny while On."
+            ),
+            "conditions": conditions,
+            "reason": "Read the Reason sensor for the current sentence.",
+            "docs": f"{DOCS_DEVICES}/bad-weather.md",
+        }

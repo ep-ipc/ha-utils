@@ -2,7 +2,7 @@
 
 HA Utils deploys blueprints from `bundled/blueprints/` to `/config/blueprints/`. See [Deploy](deploy.md) for the copy rules and folder conventions.
 
-Weather alerts are not blueprints. Add a [Wind, Temperature, or Bad weather entry](signals.md) and trigger your own automation on the entities it publishes.
+Weather alerts are not blueprints. Add a [Wind, Temperature, or Bad weather](devices/README.md) entry and trigger your own automation on the entities it publishes.
 
 ## Control all by device type
 

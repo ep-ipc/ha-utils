@@ -45,7 +45,8 @@ Required for bundled [scripts](scripts.md).
 | Resource | Where to find it |
 |----------|------------------|
 | Font themes | Profile / theme selector |
-| Wind, temperature, bad weather | **Settings → Devices & services → Home Assistant Utils** |
+| Wind, temperature, bad weather | **Settings → Devices & services → Home Assistant Utils** — see [Devices](devices/README.md) |
+| Device Guide | Each signal device page → diagnostic **Guide** |
 | Control-all blueprint | **Settings → Automations & scenes → Blueprints** |
 | Expose-all script | **Settings → Automations & scenes → Scripts** |
 | Deploy action | **Settings → Developer tools → Actions → `ha_utils.deploy_bundled`** |

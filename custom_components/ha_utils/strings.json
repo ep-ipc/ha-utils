@@ -20,7 +20,7 @@
       "step": {
         "user": {
           "title": "Wind",
-          "description": "Reads a gust sensor and a forecast weather entity. Publishes level, risk, calm, and gust factor for automations.",
+          "description": "Reads a gust sensor and a forecast weather entity. Publishes Level (safe / advisory / warning), Risk, Calm, and Gust factor. Device Guide explains the rise and fall lines.",
           "data": {
             "name": "Name",
             "gust_entity": "Gust sensor",
