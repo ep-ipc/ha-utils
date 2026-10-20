@@ -1,4 +1,4 @@
-"""Hot and cold lines shown on the temperature device page."""
+"""Threshold lines shown on signal device pages."""
 
 from __future__ import annotations
 
@@ -11,57 +11,104 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 
+_TEMPERATURE = (
+    ("hot_threshold", "Hot above", 90, "mdi:thermometer-high"),
+    ("cold_threshold", "Cold below", 32, "mdi:thermometer-low"),
+)
+_WIND = (
+    ("rise_big", "Rise to big", 30, "mdi:arrow-up-bold"),
+    ("rise_all", "Rise to all", 60, "mdi:arrow-up-bold-outline"),
+    ("fall_all", "Fall from all", 45, "mdi:arrow-down-bold-outline"),
+    ("fall_big", "Fall to safe", 20, "mdi:arrow-down-bold"),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add the hot and cold thresholds for each temperature entry."""
+    """Add configurable lines for temperature and wind entries."""
 
     for subentry in entry.subentries.values():
-        if subentry.subentry_type != "temperature":
-            continue
-        async_add_entities(
-            [
-                ThresholdNumber(entry.entry_id, subentry, "hot_threshold", "Hot above", 90),
-                ThresholdNumber(entry.entry_id, subentry, "cold_threshold", "Cold below", 32),
-            ],
-            config_subentry_id=subentry.subentry_id,
-        )
+        if subentry.subentry_type == "temperature":
+            async_add_entities(
+                [
+                    ThresholdNumber(
+                        entry.entry_id,
+                        subentry,
+                        key=key,
+                        name=name,
+                        default=default,
+                        icon=icon,
+                        model="Temperature",
+                        unit_kind="temperature",
+                        minimum=-50,
+                        maximum=150,
+                    )
+                    for key, name, default, icon in _TEMPERATURE
+                ],
+                config_subentry_id=subentry.subentry_id,
+            )
+        elif subentry.subentry_type == "wind_signal":
+            async_add_entities(
+                [
+                    ThresholdNumber(
+                        entry.entry_id,
+                        subentry,
+                        key=key,
+                        name=name,
+                        default=default,
+                        icon=icon,
+                        model="Wind",
+                        unit_kind="wind",
+                        minimum=0,
+                        maximum=150,
+                    )
+                    for key, name, default, icon in _WIND
+                ],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 class ThresholdNumber(NumberEntity):
-    """A temperature line the user can change on the device page."""
+    """A line the user can change on the device page."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
-    _attr_native_min_value = -50
-    _attr_native_max_value = 150
     _attr_native_step = 1
 
     def __init__(
         self,
         entry_id: str,
         subentry: ConfigSubentry,
+        *,
         key: str,
         name: str,
         default: float,
+        icon: str,
+        model: str,
+        unit_kind: str,
+        minimum: float,
+        maximum: float,
     ) -> None:
         self.entry_id = entry_id
         self.subentry_id = subentry.subentry_id
         self.key = key
         self._default = default
+        self._unit_kind = unit_kind
         self._attr_name = name
+        self._attr_icon = icon
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
-        self._attr_icon = "mdi:thermometer-high" if key == "hot_threshold" else "mdi:thermometer-low"
+        self._attr_native_min_value = minimum
+        self._attr_native_max_value = maximum
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
             manufacturer="HA Utils",
-            model="Temperature",
+            model=model,
         )
 
     def _subentry(self) -> ConfigSubentry | None:
@@ -83,6 +130,11 @@ class ThresholdNumber(NumberEntity):
         subentry = self._subentry()
         if subentry is None:
             return None
+        if self._unit_kind == "wind":
+            gust_id = subentry.data.get("gust_entity")
+            gust = None if not isinstance(gust_id, str) else self.hass.states.get(gust_id)
+            unit = None if gust is None else gust.attributes.get("unit_of_measurement")
+            return str(unit) if unit else "mph"
         weather_id = subentry.data.get("weather_entity")
         weather = None if not isinstance(weather_id, str) else self.hass.states.get(weather_id)
         unit = None if weather is None else weather.attributes.get("temperature_unit")

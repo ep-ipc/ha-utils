@@ -38,9 +38,9 @@ Entities on the device:
 
 The forecast is multiplied by the gust factor because it is a sustained wind and the lines are gust lines. The factor moves once an hour, 80 percent previous and 20 percent new, only when the 30-minute gust is at least 5 and the forecast sustained wind is at least 8. A calm forecast cannot pull a live gust down. If both sources are missing, the level stays where it was.
 
-`big` means the lower rise line. `all` means the higher rise line.
+`big` means the lower rise line. `all` means the higher rise line. Those lines are yours to set. They start at 30 and 60 for rising, and 45 and 20 for falling, in the gust sensor's speed unit.
 
-The Configuration card selectors are **Weather station** (a wind-speed sensor) and **Forecast**.
+The Configuration card has **Weather station**, **Forecast**, **Rise to big**, **Rise to all**, **Fall from all**, and **Fall to safe**.
 
 ## Temperature
 

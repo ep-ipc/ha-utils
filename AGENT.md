@@ -14,7 +14,7 @@ Current subentries:
 | `temperature` | Temperature | Temperature, Hot, Cold |
 | `bad_weather` | Bad weather | Condition, Bad weather, Reason |
 
-Wind is a generic wind reading. Do not name it for shades or any other device. Hot and cold are the user's thresholds, default 90 and 32 in the forecast temperature unit. Bad weather conditions default to lightning, lightning-rainy, pouring, and rainy.
+Wind is a generic wind reading. Do not name it for shades or any other device. Wind rise and fall lines are the user's thresholds, default 30 / 60 / 45 / 20 in the gust sensor's speed unit. Hot and cold are the user's thresholds, default 90 and 32 in the forecast temperature unit. Bad weather conditions default to lightning, lightning-rainy, pouring, and rainy.
 
 Weather alerts are not blueprints. The only bundled blueprint is the control-all script. Deploy deletes the retired `high_wind`, `hot_day`, `cold_day`, and `possible_thunderstorm` blueprint files.
 
@@ -31,7 +31,7 @@ Math that does not need Home Assistant belongs in `logic.py`. Test it from `test
 
 ## Home Assistant wiring
 
-- Device-page settings are entities with `EntityCategory.CONFIG`: selects for sources, numbers for hot and cold. The device page does not host the subentry reconfigure dialog.
+- Device-page settings are entities with `EntityCategory.CONFIG`: selects for sources, numbers for wind rise/fall and hot/cold. The device page does not host the subentry reconfigure dialog.
 - Changing a source or a threshold updates the subentry and reloads the entry. Drop the cached runtime on unload so the next setup reads the new data. A runtime kept in `hass.data` will ignore the change.
 - Bus listeners that write state must be `@callback` and stay on the event loop. `async_call_later` callbacks that touch `hass` must be `@callback` too.
 - Source lists update after entities appear. Do not snapshot options only at startup.
